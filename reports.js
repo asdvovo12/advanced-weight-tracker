@@ -22,51 +22,50 @@ const USER_SUBSCRIPTION_DATA_KEY = '@App:userSubscriptionData';
 
 const translations = {
     ar: {
-        title: 'التقارير الصحية', 
-        week: 'أسبوعي', 
-        month: 'شهري', 
-        weight: 'الوزن', 
-        bmi: 'مؤشر كتلة الجسم', 
-        avgDailySteps: 'متوسط الخطوات', 
-        avgDailyKm: 'المسافة (كم)', 
-        avgCaloriesBurned: 'حرق السعرات', 
-        avgActiveTime: 'الوقت النشط', 
-        avgDailyWater: 'الماء', 
-        weeklyActivity: 'النشاط الأسبوعي', 
-        monthlyActivity: 'النشاط الشهري', 
-        steps: 'خطوات', 
-        caloriesConsumed: 'السعرات', 
-        kg: 'كجم', 
-        hrs: 'ساعة', 
-        mlUnit: 'مل', 
-        loading: 'جاري تحميل البيانات...', 
-        // استخدام الحروف المتصلة لحل مشكلة تقطع الحروف في مكتبة الشارت
+        title: 'التقارير الصحية',
+        week: 'أسبوعي',
+        month: 'شهري',
+        weight: 'الوزن',
+        bmi: 'مؤشر كتلة الجسم',
+        avgDailySteps: 'متوسط الخطوات',
+        avgDailyKm: 'المسافة (كم)',
+        avgCaloriesBurned: 'حرق السعرات',
+        avgActiveTime: 'الوقت النشط',
+        avgDailyWater: 'الماء',
+        weeklyActivity: 'النشاط الأسبوعي',
+        monthlyActivity: 'النشاط الشهري',
+        steps: 'خطوات',
+        caloriesConsumed: 'السعرات',
+        kg: 'كجم',
+        hrs: 'ساعة',
+        mlUnit: 'مل',
+        loading: 'جاري تحميل البيانات...',
+        
         dayNames: ["ﺃﺣﺪ", "ﺍﺛﻨﻴﻦ", "ﺛﻼﺛﺎﺀ", "ﺃﺭﺑﻌﺎﺀ", "ﺧﻤﻴﺲ", "ﺟﻤﻌﺔ", "ﺳﺒﺖ"], 
-        weekLabels: ["ﺃﺳﺒﻮﻉ 1", "ﺃﺳﺒﻮﻉ 2", "ﺃﺳﺒﻮﻉ 3", "ﺃﺳﺒﻮﻉ 4"], 
-        vsLastWeek: 'مقارنة بالأسبوع الماضي', 
-        vsLastMonth: 'مقارنة بالشهر الماضي', 
-        increase: 'زيادة', 
-        decrease: 'نقصان', 
-        stable: 'مستقر', 
-        shareReport: 'مشاركة', 
-        shareError: 'خطأ', 
-        shareMessage: 'تقريري الصحي', 
+        weekLabels: ["ﺃﺳﺒﻮﻉ 4", "ﺃﺳﺒﻮﻉ 3", "ﺃﺳﺒﻮﻉ 2", "ﺃﺳﺒﻮﻉ 1"],
+        vsLastWeek: 'مقارنة بالأسبوع الماضي',
+        vsLastMonth: 'مقارنة بالشهر الماضي',
+        increase: 'زيادة',
+        decrease: 'نقصان',
+        stable: 'مستقر',
+        shareReport: 'مشاركة',
+        shareError: 'خطأ',
+        shareMessage: 'تقريري الصحي',
         sharingNotAvailable: 'المشاركة غير متاحة',
-        premiumFeatureTitle: 'ميزة مميزة', 
-        upgradePrompt: 'للترقية', 
+        premiumFeatureTitle: 'ميزة مميزة',
+        upgradePrompt: 'للترقية',
         upgrade: 'ترقية',
     },
     en: {
-        title: 'Health Reports', week: 'Weekly', month: 'Monthly', weight: 'WEIGHT', bmi: 'BMI', avgDailySteps: 'AVG STEPS', avgDailyKm: 'AVG KM', avgCaloriesBurned: 'AVG CALORIES', avgActiveTime: 'ACTIVE TIME', avgDailyWater: 'AVG WATER', weeklyActivity: 'Weekly Activity', monthlyActivity: 'Monthly Activity', steps: 'Steps', caloriesConsumed: 'Calories', kg: 'kg', hrs: 'hrs', mlUnit: 'ml', loading: 'Loading...', 
-        dayNames: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], 
-        weekLabels: ["Week 1", "Week 2", "Week 3", "Week 4"], 
+        title: 'Health Reports', week: 'Weekly', month: 'Monthly', weight: 'WEIGHT', bmi: 'BMI', avgDailySteps: 'AVG STEPS', avgDailyKm: 'AVG KM', avgCaloriesBurned: 'AVG CALORIES', avgActiveTime: 'ACTIVE TIME', avgDailyWater: 'AVG WATER', weeklyActivity: 'Weekly Activity', monthlyActivity: 'Monthly Activity', steps: 'Steps', caloriesConsumed: 'Calories', kg: 'kg', hrs: 'hrs', mlUnit: 'ml', loading: 'Loading...',
+        dayNames: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+        weekLabels: ["Week 1", "Week 2", "Week 3", "Week 4"],
         vsLastWeek: 'vs Last Week', vsLastMonth: 'vs Last Month', increase: 'Increase', decrease: 'Decrease', stable: 'Stable', shareReport: 'Share', shareError: 'Error', shareMessage: 'My Health Report', sharingNotAvailable: 'N/A',
         premiumFeatureTitle: 'Premium', upgradePrompt: 'Upgrade to access', upgrade: 'Upgrade',
     },
 };
 
 const getLocalDateString = (date) => { const d = new Date(date); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().split('T')[0]; };
-// دالة إضافة الأيام
 const addDays = (date, days) => { const res = new Date(date); res.setDate(res.getDate() + days); return res; };
 
 const ComparisonCard = React.memo(({ value, label, unit, comparisonText, changePercent, styles }) => {
@@ -104,7 +103,7 @@ const PremiumLockView = ({ t, styles, onUpgrade }) => (
 const ReportsScreen = ({ navigation, language, isDarkMode }) => {
     const t = useMemo(() => translations[language] || translations.en, [language]);
     const styles = useMemo(() => getStyles(isDarkMode), [isDarkMode]);
-    
+
     const [isLoading, setIsLoading] = useState(true);
     const [isUserPremium, setIsUserPremium] = useState(false);
     const [period, setPeriod] = useState('week');
@@ -139,36 +138,28 @@ const ReportsScreen = ({ navigation, language, isDarkMode }) => {
         };
         checkStatusAndFetchData();
     }, [language, period]));
-    
+
     const fetchData = async () => {
         try {
             const daysInPeriod = period === 'week' ? 7 : 30;
             const today = new Date();
-            
-            // 1. توليد التواريخ من الأقدم (اليسار) إلى الأحدث (اليمين)
-            // Array.from سينتج مؤشرات 0, 1, 2...
-            // إذا كان اليوم هو الجمعة (0)، نريد أن نبدأ من (0 - 6) أي السبت الماضي
-            // المعادلة: اليوم + (i - (daysInPeriod - 1))
+
             const currentPeriodDates = Array.from({ length: daysInPeriod }).map((_, i) => {
                 return addDays(today, i - (daysInPeriod - 1));
             });
-            // النتيجة ستكون مرتبة زمنياً: [قديم، ...، اليوم]
-
-            // الفترة السابقة للمقارنة
             const previousPeriodDates = Array.from({ length: daysInPeriod }).map((_, i) => {
                 return addDays(today, i - (daysInPeriod * 2 - 1));
             });
-
             const allDates = [...previousPeriodDates, ...currentPeriodDates];
             const allDateStrings = allDates.map(d => getLocalDateString(d));
-            
+
             const foodLogKeys = allDateStrings.map(dateStr => `${FOOD_LOG_PREFIX}${dateStr}`);
             const waterLogKeys = allDateStrings.map(dateStr => `${WATER_DATA_PREFIX}${dateStr}`);
             const keysToFetch = [WEIGHT_HISTORY_KEY, SETTINGS_KEY, STEPS_HISTORY_KEY, ...foodLogKeys, ...waterLogKeys];
             const storedData = await AsyncStorage.multiGet(keysToFetch);
             const dataMap = new Map(storedData);
-
             const { data: { user } } = await supabase.auth.getUser();
+
             if (user) {
                 const localSteps = JSON.parse(dataMap.get(STEPS_HISTORY_KEY) || '{}');
                 if (Object.keys(localSteps).length === 0) {
@@ -177,7 +168,7 @@ const ReportsScreen = ({ navigation, language, isDarkMode }) => {
                         .select('date, step_count')
                         .eq('user_id', user.id)
                         .in('date', allDateStrings);
-                    
+
                     if (cloudSteps) {
                         const newStepsMap = {};
                         cloudSteps.forEach(s => newStepsMap[s.date] = s.step_count);
@@ -186,7 +177,6 @@ const ReportsScreen = ({ navigation, language, isDarkMode }) => {
                     }
                 }
             }
-
             const processPeriodData = (periodDates) => {
                 const periodDateStrings = periodDates.map(d => getLocalDateString(d));
                 const stepsHistory = JSON.parse(dataMap.get(STEPS_HISTORY_KEY) || '{}');
@@ -203,24 +193,24 @@ const ReportsScreen = ({ navigation, language, isDarkMode }) => {
                     avgCaloriesBurned: totalSteps > 0 ? (totalSteps * 0.04) / periodDates.length : 0,
                     avgActiveHours: totalSteps > 0 ? ((totalSteps / 100) / periodDates.length) / 60 : 0,
                     avgWater: totalWater > 0 ? totalWater / periodDates.length : 0,
-                    dailySteps, // هذه المصفوفة مرتبة الآن: [قديم -> حديث]
+                    dailySteps,
                     dailyCaloriesConsumed,
                 };
             };
-            
+
             const currentData = processPeriodData(currentPeriodDates);
             const previousData = processPeriodData(previousPeriodDates);
             const weightHistory = JSON.parse(dataMap.get(WEIGHT_HISTORY_KEY) || '[]');
             let currentWeight = 0;
             if (weightHistory.length > 0) { currentWeight = [...weightHistory].sort((a, b) => new Date(b.date) - new Date(a.date))[0].weight || 0; }
             const settings = JSON.parse(dataMap.get(SETTINGS_KEY) || '{}');
-            const heightFromSettings = settings.height; 
-            let bmiDisplayValue = '---'; 
+            const heightFromSettings = settings.height;
+            let bmiDisplayValue = '---';
             if (currentWeight > 0 && heightFromSettings && !isNaN(parseFloat(heightFromSettings))) {
                 const heightInMeters = parseFloat(heightFromSettings) / 100;
                 if (heightInMeters > 0) { bmiDisplayValue = (currentWeight / (heightInMeters * heightInMeters)).toFixed(1); }
             }
-            
+
             setReportData({
                 weight: currentWeight.toFixed(1),
                 bmi: bmiDisplayValue,
@@ -230,7 +220,7 @@ const ReportsScreen = ({ navigation, language, isDarkMode }) => {
                 avgActiveHours: currentData.avgActiveHours.toFixed(1),
                 avgWater: Math.round(currentData.avgWater).toLocaleString(language === 'ar' ? 'ar-EG' : 'en-US'),
             });
-            
+
             const calculateChange = (current, previous) => (previous > 0 ? ((current - previous) / previous) * 100 : (current > 0 ? 100 : 0));
             setComparisonData({
                 steps: calculateChange(currentData.avgSteps, previousData.avgSteps),
@@ -239,18 +229,32 @@ const ReportsScreen = ({ navigation, language, isDarkMode }) => {
                 activeHours: calculateChange(currentData.avgActiveHours, previousData.avgActiveHours),
                 water: calculateChange(currentData.avgWater, previousData.avgWater),
             });
-
+            
             let labels, stepsDataset, caloriesDataset;
             if (period === 'week') {
-                // مصفوفة الأسماء يجب أن تتبع مصفوفة التواريخ المرتبة زمنياً (قديم -> حديث)
-                labels = currentPeriodDates.map(date => t.dayNames[date.getDay()]);
+                labels = currentPeriodDates.map(date => {
+                    const jsDayIndex = date.getDay(); 
+                    
+                    if (language === 'ar') {
+                        let customIndex = 0;
+                        if (jsDayIndex === 1) customIndex = 0;      
+                        else if (jsDayIndex === 0) customIndex = 1; 
+                        else if (jsDayIndex === 6) customIndex = 2; 
+                        else if (jsDayIndex === 5) customIndex = 3; 
+                        else if (jsDayIndex === 4) customIndex = 4; 
+                        else if (jsDayIndex === 3) customIndex = 5; 
+                        else if (jsDayIndex === 2) customIndex = 6; 
+                        return t.dayNames[customIndex];
+                    }
+                    return t.dayNames[jsDayIndex]; 
+                });
+                
                 stepsDataset = currentData.dailySteps;
                 caloriesDataset = currentData.dailyCaloriesConsumed;
             } else {
-                labels = t.weekLabels; // ["أسبوع 1", "أسبوع 2", ...]
+                labels = t.weekLabels;
                 stepsDataset = [0, 0, 0, 0];
                 caloriesDataset = [0, 0, 0, 0];
-                // تجميع البيانات الأسبوعية
                 for (let i = 0; i < 30; i++) {
                     const weekIndex = Math.floor(i / 7);
                     if (weekIndex < 4) {
@@ -260,18 +264,6 @@ const ReportsScreen = ({ navigation, language, isDarkMode }) => {
                 }
             }
 
-            // ==========================================
-            // الإضافة الجديدة هنا (زي الكود التاني)
-            // ==========================================
-            if (language === 'ar') {
-                // لو عربي، اقلب المصفوفات عشان الترتيب يبدأ من اليمين لليسار (أو العكس حسب رغبتك في العرض)
-                // بما أن مكتبة الشارت بترسم من اليسار، عكس المصفوفة هيخلي "اليوم" يظهر في الأول (يسار) أو الآخر حسب الترتيب الأصلي
-                labels = [...labels].reverse();
-                stepsDataset = [...stepsDataset].reverse();
-                caloriesDataset = [...caloriesDataset].reverse();
-            }
-            // ==========================================
-
             setChartData({
                 labels,
                 datasets: [
@@ -279,6 +271,7 @@ const ReportsScreen = ({ navigation, language, isDarkMode }) => {
                     { data: caloriesDataset.length > 0 ? caloriesDataset : [0], color: (opacity = 1) => `rgba(255, 152, 0, ${opacity})`, strokeWidth: 3, legend: t.caloriesConsumed }
                 ],
             });
+
         } catch (error) {
             console.error("Error fetching report data:", error);
         }
@@ -291,7 +284,7 @@ const ReportsScreen = ({ navigation, language, isDarkMode }) => {
             await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: t.shareMessage, UTI: 'public.png' });
         } catch (error) { Alert.alert(t.shareError, error.message); }
     }, [t]);
-    
+
     const chartConfig = {
         backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF',
         backgroundGradientFrom: isDarkMode ? '#1E1E1E' : '#FFFFFF',
@@ -302,34 +295,87 @@ const ReportsScreen = ({ navigation, language, isDarkMode }) => {
         style: { borderRadius: 16 },
         propsForDots: { r: '4', strokeWidth: '2', stroke: isDarkMode ? '#00796B' : '#388e3c' },
         propsForLabels: { fontSize: 10, fontWeight: 'bold' },
-        // fillShadowGradientFromOpacity: 0.5, // Optional visual improvements
-        // fillShadowGradientToOpacity: 0.1,
+        propsForBackgroundLines: {
+             strokeDasharray: "", 
+             strokeWidth: 1,
+             stroke: isDarkMode ? '#333' : '#F0F0F0' 
+        },
+        paddingRight: 30,
+        paddingLeft: 30,
+        count: 5 
     };
-    
+
     if (isLoading) {
         return (
-            <SafeAreaView style={[styles.safeArea, {justifyContent: 'center', alignItems: 'center'}]}>
+            <SafeAreaView style={[styles.safeArea, { justifyContent: 'center', alignItems: 'center' }]}>
                 <ActivityIndicator size="large" color={isDarkMode ? '#4CAF50' : '#388e3c'} />
                 <Text style={styles.loadingText}>{t.loading}</Text>
             </SafeAreaView>
         );
     }
-    
+
     const comparisonLabel = period === 'week' ? t.vsLastWeek : t.vsLastMonth;
     const isChartDataValid = chartData.datasets.length > 0 && chartData.datasets.every(ds => ds.data && ds.data.length > 0) && chartData.labels.length > 0;
-    
-    let tooltipStyle = {}; 
+
+    const chartWidth = Dimensions.get('window').width - 55;
+
+    let tooltipStyle = {};
     const tooltipWidth = 100;
     const tooltipHeight = 45;
-    const screenWidth = Dimensions.get('window').width;
-
+    
     if (tooltip) {
-        const chartWidth = screenWidth - 40;
         let left = tooltip.x - (tooltipWidth / 2);
-        let top = tooltip.y - tooltipHeight - 10; 
+        let top = tooltip.y - tooltipHeight - -3;
+        
+        // --- دي الفرامل (بنحطها في الأول عشان نضمن الأساسيات) ---
         if (left < 0) left = 0;
         if (left + tooltipWidth > chartWidth) left = chartWidth - tooltipWidth;
-        tooltipStyle = { position: 'absolute', top: top, left: left, width: tooltipWidth, height: tooltipHeight, alignItems: 'center', justifyContent: 'center', zIndex: 100 };
+        
+        // --- تعديلات الشهر (الكود القديم) ---
+        if (period === 'month') {
+            if (tooltip.index === 0) {
+                // أسبوع 4 (الشمال)
+                left = left - 6; 
+            } else if (tooltip.index === 3) {
+                // أسبوع 1 (اليمين)
+                left = left + 25; 
+            } else {
+                // اللي في النص
+                left = left + 25; 
+            }
+        }
+        // --- هنا التعديل بتاع الجمعة والسبت ---
+        else if (period === 'week') {
+            // يوم السبت (آخر يوم في الاسبوع على اليمين)
+            if (tooltip.index === 6) {
+                left = left - -10; // بنرجعه شمال 25 نقطة عشان يدخل جوا الشاشة
+            } 
+            // يوم الجمعة (اللي قبل الأخير)
+            else if (tooltip.index === 0) {
+                left = left - 25; // بنرجعه شمال شوية بسيطة
+            }
+        }
+
+        tooltipStyle = { 
+            position: 'absolute', 
+            top: top, 
+            left: left, 
+            width: tooltipWidth, 
+            height: tooltipHeight, 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            zIndex: 100 
+        };
+    }
+
+    let rightAxisLabels = [];
+    if (isChartDataValid) {
+        const allDataPoints = chartData.datasets.reduce((acc, ds) => [...acc, ...ds.data], []);
+        let maxValue = Math.max(...allDataPoints);
+        if (maxValue === 0) maxValue = 100;
+        for (let i = 4; i >= 0; i--) {
+            rightAxisLabels.push(Math.round((maxValue / 4) * i));
+        }
     }
 
     return (
@@ -360,9 +406,10 @@ const ReportsScreen = ({ navigation, language, isDarkMode }) => {
                             <ComparisonCard value={reportData.avgCaloriesBurned} label={t.avgCaloriesBurned} comparisonText={comparisonLabel} changePercent={comparisonData.caloriesBurned} styles={styles} />
                             <ComparisonCard value={reportData.avgActiveHours} label={t.avgActiveTime} unit={t.hrs} comparisonText={comparisonLabel} changePercent={comparisonData.activeHours} styles={styles} />
                         </View>
+                        
                         <View style={styles.chartContainer}>
                             <Text style={styles.chartTitle}>{period === 'week' ? t.weeklyActivity : t.monthlyActivity}</Text>
-                            
+
                             <View style={styles.legendContainer}>
                                 <View style={styles.legendItem}>
                                     <View style={[styles.legendDot, { backgroundColor: 'rgba(76, 175, 80, 1)' }]} />
@@ -373,61 +420,81 @@ const ReportsScreen = ({ navigation, language, isDarkMode }) => {
                                     <Text style={styles.legendText}>{t.caloriesConsumed}</Text>
                                 </View>
                             </View>
-
+                            
                             {isChartDataValid ? (
-                                <View style={{ alignItems: 'center' }}>
-                                    {/* 
-                                        تعديل هام جداً:
-                                        direction: 'ltr' تجبر الرسم البياني أن يبدأ من اليسار (الماضي) إلى اليمين (الحاضر)
-                                        حتى لو كان الجهاز بالعربي. هذا يحل مشكلة الترتيب المقلوب.
-                                    */}
-                                    <View style={{ 
-    direction: 'ltr', // خليها LTR دايماً عشان الرسم البياني يطلع مظبوط في كل اللغات
-    width: screenWidth - 40, 
-    alignSelf: 'center' 
-}}>
-                                        <LineChart 
-                                            data={chartData} 
-                                            width={screenWidth - 40} 
-                                            height={240} 
-                                            chartConfig={chartConfig} 
-                                            bezier 
-                                            style={{ borderRadius: 16 }} 
-                                            fromZero 
-                                            // خاصية هامة لمنع قطع النص في الجوانب عند التحويل
-                                            withInnerLines={true}
-                                            segments={4}
-                                            onDataPointClick={({ value, x, y, index, dataset }) => { 
-                                                const datasetIndex = chartData.datasets.findIndex(d => d.legend === dataset.legend);
-                                                if (tooltip && tooltip.index === index && tooltip.datasetIndex === datasetIndex) { 
-                                                    setTooltip(null); 
-                                                } else {
-                                                    const unit = datasetIndex === 0 ? ` ${t.steps}` : ` ${t.caloriesConsumed}`; 
-                                                    setTooltip({ x, y, value, index, datasetIndex, unit }); 
-                                                }
-                                            }} 
-                                        />
-                                        {tooltip && (
-                                            <View style={tooltipStyle}>
-                                                <View style={styles.tooltipContainer}>
-                                                    <Text style={styles.tooltipText} numberOfLines={1}>
-                                                        {Math.round(tooltip.value).toLocaleString(language === 'ar' ? 'ar-EG' : 'en-US')}{tooltip.unit}
-                                                    </Text>
-                                                </View>
-                                                <View style={styles.tooltipArrow} />
+                                <View style={{ alignItems: 'center', position: 'relative', width: '100%' }}>
+                                    
+                                    <View style={{ direction: 'ltr', width: '100%', alignItems: 'center' }}>
+                                        
+                                        <View style={{ width: chartWidth, position: 'relative' }}>
+
+                                            <View style={{
+                                                borderRadius: 16,
+                                                overflow: 'hidden',
+                                                backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF',
+                                                width: '100%'
+                                            }}>
+                                                <LineChart
+                                                    data={chartData}
+                                                    width={chartWidth} 
+                                                    height={240}
+                                                    chartConfig={chartConfig}
+                                                    bezier
+                                                    style={{ 
+                                                        borderRadius: 16,
+                                                        marginVertical: 8,
+                                                        paddingRight: period === 'month' ? 20 : 25, 
+                                                        paddingLeft: period === 'month' ? 25 : 0,  
+                                                    }}
+                                                    fromZero
+                                                    withInnerLines={true}
+                                                    segments={4}
+                                                    formatYLabel={(y) => language === 'ar' ? '' : Math.round(y).toString()} 
+                                                    withVerticalLines={false}
+                                                    xLabelsOffset={period === 'month' ? -5 : 0}
+                                                    onDataPointClick={({ value, x, y, index, dataset }) => {
+                                                        const datasetIndex = chartData.datasets.findIndex(d => d.legend === dataset.legend);
+                                                        if (tooltip && tooltip.index === index && tooltip.datasetIndex === datasetIndex) {
+                                                            setTooltip(null);
+                                                        } else {
+                                                            const unit = datasetIndex === 0 ? ` ${t.steps}` : ` ${t.caloriesConsumed}`;
+                                                            setTooltip({ x, y, value, index, datasetIndex, unit });
+                                                        }
+                                                    }}
+                                                />
                                             </View>
-                                        )}
+
+                                            {tooltip && (
+                                                <View style={tooltipStyle}>
+                                                    <View style={styles.tooltipContainer}>
+                                                        <Text style={styles.tooltipText} numberOfLines={1}>
+                                                            {Math.round(tooltip.value).toLocaleString(language === 'ar' ? 'ar-EG' : 'en-US')}{tooltip.unit}
+                                                        </Text>
+                                                    </View>
+                                                    <View style={styles.tooltipArrow} />
+                                                </View>
+                                            )}
+                                        </View>
                                     </View>
+
+                                    {language === 'ar' && (
+                                        <View style={[styles.rightAxisContainer, { right: 285 }]}> 
+                                            {rightAxisLabels.map((label, index) => (
+                                                <Text key={index} style={styles.rightAxisText}>{label}</Text>
+                                            ))}
+                                        </View>
+                                    )}
+
                                 </View>
                             ) : (
-                                <View style={{height: 240, justifyContent: 'center', alignItems: 'center'}}><Text style={{color: isDarkMode ? '#777' : '#999'}}>No Data Available</Text></View>
+                                <View style={{ height: 240, justifyContent: 'center', alignItems: 'center' }}><Text style={{ color: isDarkMode ? '#777' : '#999' }}>No Data Available</Text></View>
                             )}
                         </View>
+                      
                     </View>
                 </ViewShot>
             </ScrollView>
-
-            {!isUserPremium && 
+            {!isUserPremium &&
                 <PremiumLockView t={t} styles={styles} onUpgrade={() => navigation.navigate('PremiumScreen')} />
             }
         </SafeAreaView>
@@ -459,11 +526,27 @@ const getStyles = (isDark) => StyleSheet.create({
     legendItem: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 15 },
     legendDot: { width: 12, height: 12, borderRadius: 6, marginRight: 8 },
     legendText: { fontSize: 14, color: isDark ? '#B0B0B0' : '#757575' },
-    
+
     tooltipContainer: { width: 120, backgroundColor: 'black', paddingVertical: 6, paddingHorizontal: 8, borderRadius: 6, elevation: 5, alignItems: 'center' },
     tooltipText: { color: 'white', fontWeight: 'bold', textAlign: 'center' },
     tooltipArrow: { width: 0, height: 0, borderLeftWidth: 6, borderRightWidth: 6, borderTopWidth: 6, borderStyle: 'solid', backgroundColor: 'transparent', borderLeftColor: 'transparent', borderRightColor: 'transparent', borderTopColor: 'black', marginTop: -1 },
-    
+
+    rightAxisContainer: {
+        position: 'absolute',
+        right: 293,     
+        top: 25,       
+        bottom: 55,    
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        zIndex: 10,
+    },
+    rightAxisText: {
+        fontSize: 10,
+        fontWeight: 'bold',
+        color: isDark ? '#B0B0B0' : 'rgba(50, 50, 50, 0.7)',
+        backgroundColor: 'transparent',
+    },
+
     premiumLockOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', backgroundColor: isDark ? 'rgba(18, 18, 18, 0.9)' : 'rgba(247, 253, 249, 0.95)', zIndex: 10 },
     premiumLockContentBox: { width: '90%', maxWidth: 400, backgroundColor: isDark ? '#1E1E1E' : '#FFFFFF', borderRadius: 16, padding: 30, alignItems: 'center', shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 3.84, elevation: 5 },
     premiumLockIcon: { color: '#4CAF50', marginBottom: 20 },
