@@ -2,17 +2,17 @@
 import {
     SafeAreaView, View, Text, StyleSheet, ScrollView,
     Dimensions, I18nManager, ActivityIndicator, TouchableOpacity,
-    Alert
+    Alert, Platform
 } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
-import { supabase } from './supabaseClient'; // 1. استيراد Supabase
+import { supabase } from './supabaseClient';
 
-// --- الثوابت والمفاتيح والترجمات ---
+// --- الثوابت والمفاتيح ---
 const WEIGHT_HISTORY_KEY = '@WeightTracker:history';
 const SETTINGS_KEY = '@Settings:generalSettings';
 const STEPS_HISTORY_KEY = '@Steps:DailyHistory';
@@ -20,18 +20,53 @@ const FOOD_LOG_PREFIX = 'mealsData_';
 const WATER_DATA_PREFIX = 'waterData_';
 const USER_SUBSCRIPTION_DATA_KEY = '@App:userSubscriptionData';
 
-// ... (Translations and helper functions remain unchanged)
 const translations = {
     ar: {
-        title: 'التقارير الصحية', week: 'أسبوعي', month: 'شهري', weight: 'الوزن', bmi: 'مؤشر كتلة الجسم', avgDailySteps: 'متوسط الخطوات اليومي', avgDailyKm: 'متوسط المسافة اليومي', avgCaloriesBurned: 'متوسط حرق السعرات', avgActiveTime: 'متوسط الوقت النشط', avgDailyWater: 'متوسط استهلاك الماء', weeklyActivity: 'النشاط الأسبوعي', monthlyActivity: 'النشاط الشهري', steps: 'خطوات', caloriesConsumed: 'السعرات', kg: 'كجم', hrs: 'ساعة', mlUnit: 'مل', loading: 'جاري تحميل البيانات...', dayNames: ["أحد", "اثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"], weekLabels: ["أسبوع 1", "أسبوع 2", "أسبوع 3", "أسبوع 4"], vsLastWeek: 'مقابل الأسبوع الماضي', vsLastMonth: 'مقابل الشهر الماضي', increase: 'زيادة', decrease: 'نقصان', stable: 'مستقر', shareReport: 'مشاركة التقرير', shareError: 'خطأ في المشاركة', shareMessage: 'إليك تقريري الصحي من تطبيقي!', sharingNotAvailable: 'المشاركة غير متاحة على هذا الجهاز',
-        premiumFeatureTitle: 'ميزة مميزة', upgradePrompt: 'هذه الميزة متاحة فقط للمشتركين. هل ترغب بالترقية الآن؟', upgrade: 'ترقية',
+        title: 'التقارير الصحية', 
+        week: 'أسبوعي', 
+        month: 'شهري', 
+        weight: 'الوزن', 
+        bmi: 'مؤشر كتلة الجسم', 
+        avgDailySteps: 'متوسط الخطوات', 
+        avgDailyKm: 'المسافة (كم)', 
+        avgCaloriesBurned: 'حرق السعرات', 
+        avgActiveTime: 'الوقت النشط', 
+        avgDailyWater: 'الماء', 
+        weeklyActivity: 'النشاط الأسبوعي', 
+        monthlyActivity: 'النشاط الشهري', 
+        steps: 'خطوات', 
+        caloriesConsumed: 'السعرات', 
+        kg: 'كجم', 
+        hrs: 'ساعة', 
+        mlUnit: 'مل', 
+        loading: 'جاري تحميل البيانات...', 
+        // استخدام الحروف المتصلة لحل مشكلة تقطع الحروف في مكتبة الشارت
+        dayNames: ["ﺃﺣﺪ", "ﺍﺛﻨﻴﻦ", "ﺛﻼﺛﺎﺀ", "ﺃﺭﺑﻌﺎﺀ", "ﺧﻤﻴﺲ", "ﺟﻤﻌﺔ", "ﺳﺒﺖ"], 
+        weekLabels: ["ﺃﺳﺒﻮﻉ 1", "ﺃﺳﺒﻮﻉ 2", "ﺃﺳﺒﻮﻉ 3", "ﺃﺳﺒﻮﻉ 4"], 
+        vsLastWeek: 'مقارنة بالأسبوع الماضي', 
+        vsLastMonth: 'مقارنة بالشهر الماضي', 
+        increase: 'زيادة', 
+        decrease: 'نقصان', 
+        stable: 'مستقر', 
+        shareReport: 'مشاركة', 
+        shareError: 'خطأ', 
+        shareMessage: 'تقريري الصحي', 
+        sharingNotAvailable: 'المشاركة غير متاحة',
+        premiumFeatureTitle: 'ميزة مميزة', 
+        upgradePrompt: 'للترقية', 
+        upgrade: 'ترقية',
     },
     en: {
-        title: 'Health Reports', week: 'Weekly', month: 'Monthly', weight: 'WEIGHT', bmi: 'BODY MASS INDEX (BMI)', avgDailySteps: 'AVG DAILY STEPS', avgDailyKm: 'AVG DAILY KM', avgCaloriesBurned: 'AVG CALORIES BURNED', avgActiveTime: 'AVG ACTIVE TIME', avgDailyWater: 'AVG DAILY WATER', weeklyActivity: 'Weekly Activity', monthlyActivity: 'Monthly Activity', steps: 'Steps', caloriesConsumed: 'Calories', kg: 'kg', hrs: 'hrs', mlUnit: 'ml', loading: 'Loading data...', dayNames: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], weekLabels: ["Week 1", "Week 2", "Week 3", "Week 4"], vsLastWeek: 'vs. Last Week', vsLastMonth: 'vs. Last Month', increase: 'Increase', decrease: 'Decrease', stable: 'Stable', shareReport: 'Share Report', shareError: 'Sharing Error', shareMessage: 'Here is my health report from my app!', sharingNotAvailable: 'Sharing is not available on this device',
-        premiumFeatureTitle: 'Premium Feature', upgradePrompt: 'This feature is available for premium users only. Would you like to upgrade now?', upgrade: 'Upgrade',
+        title: 'Health Reports', week: 'Weekly', month: 'Monthly', weight: 'WEIGHT', bmi: 'BMI', avgDailySteps: 'AVG STEPS', avgDailyKm: 'AVG KM', avgCaloriesBurned: 'AVG CALORIES', avgActiveTime: 'ACTIVE TIME', avgDailyWater: 'AVG WATER', weeklyActivity: 'Weekly Activity', monthlyActivity: 'Monthly Activity', steps: 'Steps', caloriesConsumed: 'Calories', kg: 'kg', hrs: 'hrs', mlUnit: 'ml', loading: 'Loading...', 
+        dayNames: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], 
+        weekLabels: ["Week 1", "Week 2", "Week 3", "Week 4"], 
+        vsLastWeek: 'vs Last Week', vsLastMonth: 'vs Last Month', increase: 'Increase', decrease: 'Decrease', stable: 'Stable', shareReport: 'Share', shareError: 'Error', shareMessage: 'My Health Report', sharingNotAvailable: 'N/A',
+        premiumFeatureTitle: 'Premium', upgradePrompt: 'Upgrade to access', upgrade: 'Upgrade',
     },
 };
+
 const getLocalDateString = (date) => { const d = new Date(date); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().split('T')[0]; };
+// دالة إضافة الأيام
 const addDays = (date, days) => { const res = new Date(date); res.setDate(res.getDate() + days); return res; };
 
 const ComparisonCard = React.memo(({ value, label, unit, comparisonText, changePercent, styles }) => {
@@ -56,7 +91,7 @@ const ComparisonCard = React.memo(({ value, label, unit, comparisonText, changeP
 const PremiumLockView = ({ t, styles, onUpgrade }) => (
     <View style={styles.premiumLockOverlay}>
         <View style={styles.premiumLockContentBox}>
-            <Icon name="lock-outline" size={60} color={styles.premiumLockIcon.color} />
+            <Icon name="lock-outline" size={50} color={styles.premiumLockIcon.color} />
             <Text style={styles.premiumLockTitle}>{t.premiumFeatureTitle}</Text>
             <Text style={styles.premiumLockMessage}>{t.upgradePrompt}</Text>
             <TouchableOpacity style={styles.premiumLockButton} onPress={onUpgrade}>
@@ -83,7 +118,6 @@ const ReportsScreen = ({ navigation, language, isDarkMode }) => {
         const checkStatusAndFetchData = async () => {
             setIsLoading(true);
             try {
-                // ... (Premium check remains the same)
                 const subscriptionDataString = await AsyncStorage.getItem(USER_SUBSCRIPTION_DATA_KEY);
                 let isPremium = false;
                 if (subscriptionDataString) {
@@ -95,10 +129,9 @@ const ReportsScreen = ({ navigation, language, isDarkMode }) => {
                     }
                 }
                 setIsUserPremium(isPremium);
-                
                 await fetchData();
             } catch (e) {
-                console.error("Failed to check premium status or fetch data.", e);
+                console.error("Fetch error", e);
                 setIsUserPremium(false);
             } finally {
                 setIsLoading(false);
@@ -111,22 +144,32 @@ const ReportsScreen = ({ navigation, language, isDarkMode }) => {
         try {
             const daysInPeriod = period === 'week' ? 7 : 30;
             const today = new Date();
-            const currentPeriodDates = Array.from({ length: daysInPeriod }).map((_, i) => addDays(today, -i)).reverse();
-            const previousPeriodDates = Array.from({ length: daysInPeriod }).map((_, i) => addDays(today, -(i + daysInPeriod))).reverse();
+            
+            // 1. توليد التواريخ من الأقدم (اليسار) إلى الأحدث (اليمين)
+            // Array.from سينتج مؤشرات 0, 1, 2...
+            // إذا كان اليوم هو الجمعة (0)، نريد أن نبدأ من (0 - 6) أي السبت الماضي
+            // المعادلة: اليوم + (i - (daysInPeriod - 1))
+            const currentPeriodDates = Array.from({ length: daysInPeriod }).map((_, i) => {
+                return addDays(today, i - (daysInPeriod - 1));
+            });
+            // النتيجة ستكون مرتبة زمنياً: [قديم، ...، اليوم]
+
+            // الفترة السابقة للمقارنة
+            const previousPeriodDates = Array.from({ length: daysInPeriod }).map((_, i) => {
+                return addDays(today, i - (daysInPeriod * 2 - 1));
+            });
+
             const allDates = [...previousPeriodDates, ...currentPeriodDates];
             const allDateStrings = allDates.map(d => getLocalDateString(d));
             
-            // 1. محاولة الجلب من المحلي أولاً
             const foodLogKeys = allDateStrings.map(dateStr => `${FOOD_LOG_PREFIX}${dateStr}`);
             const waterLogKeys = allDateStrings.map(dateStr => `${WATER_DATA_PREFIX}${dateStr}`);
             const keysToFetch = [WEIGHT_HISTORY_KEY, SETTINGS_KEY, STEPS_HISTORY_KEY, ...foodLogKeys, ...waterLogKeys];
             const storedData = await AsyncStorage.multiGet(keysToFetch);
             const dataMap = new Map(storedData);
 
-            // 2. التحقق مما إذا كانت البيانات المحلية فارغة، ومحاولة الجلب من السيرفر (اختياري للأمان)
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
-                // إذا لم نجد سجل خطوات محلي، نحاول جلبه من السيرفر وتحديثه
                 const localSteps = JSON.parse(dataMap.get(STEPS_HISTORY_KEY) || '{}');
                 if (Object.keys(localSteps).length === 0) {
                     const { data: cloudSteps } = await supabase
@@ -139,13 +182,9 @@ const ReportsScreen = ({ navigation, language, isDarkMode }) => {
                         const newStepsMap = {};
                         cloudSteps.forEach(s => newStepsMap[s.date] = s.step_count);
                         dataMap.set(STEPS_HISTORY_KEY, JSON.stringify(newStepsMap));
-                        // تحديث الكاش المحلي
                         await AsyncStorage.setItem(STEPS_HISTORY_KEY, JSON.stringify(newStepsMap));
                     }
                 }
-                
-                // (يمكن تكرار نفس المنطق للوزن والمياه والأكل إذا لزم الأمر، 
-                // لكن الاعتماد على الصفحات الفردية لتحديث الكاش هو الأفضل للأداء)
             }
 
             const processPeriodData = (periodDates) => {
@@ -164,12 +203,11 @@ const ReportsScreen = ({ navigation, language, isDarkMode }) => {
                     avgCaloriesBurned: totalSteps > 0 ? (totalSteps * 0.04) / periodDates.length : 0,
                     avgActiveHours: totalSteps > 0 ? ((totalSteps / 100) / periodDates.length) / 60 : 0,
                     avgWater: totalWater > 0 ? totalWater / periodDates.length : 0,
-                    dailySteps,
+                    dailySteps, // هذه المصفوفة مرتبة الآن: [قديم -> حديث]
                     dailyCaloriesConsumed,
                 };
             };
             
-            // ... (Rest of data processing logic remains exactly the same)
             const currentData = processPeriodData(currentPeriodDates);
             const previousData = processPeriodData(previousPeriodDates);
             const weightHistory = JSON.parse(dataMap.get(WEIGHT_HISTORY_KEY) || '[]');
@@ -204,13 +242,15 @@ const ReportsScreen = ({ navigation, language, isDarkMode }) => {
 
             let labels, stepsDataset, caloriesDataset;
             if (period === 'week') {
+                // مصفوفة الأسماء يجب أن تتبع مصفوفة التواريخ المرتبة زمنياً (قديم -> حديث)
                 labels = currentPeriodDates.map(date => t.dayNames[date.getDay()]);
                 stepsDataset = currentData.dailySteps;
                 caloriesDataset = currentData.dailyCaloriesConsumed;
             } else {
-                labels = t.weekLabels;
+                labels = t.weekLabels; // ["أسبوع 1", "أسبوع 2", ...]
                 stepsDataset = [0, 0, 0, 0];
                 caloriesDataset = [0, 0, 0, 0];
+                // تجميع البيانات الأسبوعية
                 for (let i = 0; i < 30; i++) {
                     const weekIndex = Math.floor(i / 7);
                     if (weekIndex < 4) {
@@ -219,7 +259,19 @@ const ReportsScreen = ({ navigation, language, isDarkMode }) => {
                     }
                 }
             }
-            
+
+            // ==========================================
+            // الإضافة الجديدة هنا (زي الكود التاني)
+            // ==========================================
+            if (language === 'ar') {
+                // لو عربي، اقلب المصفوفات عشان الترتيب يبدأ من اليمين لليسار (أو العكس حسب رغبتك في العرض)
+                // بما أن مكتبة الشارت بترسم من اليسار، عكس المصفوفة هيخلي "اليوم" يظهر في الأول (يسار) أو الآخر حسب الترتيب الأصلي
+                labels = [...labels].reverse();
+                stepsDataset = [...stepsDataset].reverse();
+                caloriesDataset = [...caloriesDataset].reverse();
+            }
+            // ==========================================
+
             setChartData({
                 labels,
                 datasets: [
@@ -235,20 +287,9 @@ const ReportsScreen = ({ navigation, language, isDarkMode }) => {
     const handleShareReport = useCallback(async () => {
         try {
             const uri = await reportContainerRef.current.capture();
-            const isAvailable = await Sharing.isAvailableAsync();
-            if (!isAvailable) {
-                Alert.alert(t.shareError, t.sharingNotAvailable);
-                return;
-            }
-            await Sharing.shareAsync(uri, {
-                mimeType: 'image/png',
-                dialogTitle: t.shareMessage,
-                UTI: 'public.png',
-            });
-        } catch (error) {
-            console.error("Sharing error:", error);
-            Alert.alert(t.shareError, error.message);
-        }
+            if (!(await Sharing.isAvailableAsync())) { Alert.alert(t.shareError, t.sharingNotAvailable); return; }
+            await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: t.shareMessage, UTI: 'public.png' });
+        } catch (error) { Alert.alert(t.shareError, error.message); }
     }, [t]);
     
     const chartConfig = {
@@ -260,6 +301,9 @@ const ReportsScreen = ({ navigation, language, isDarkMode }) => {
         labelColor: (opacity = 1) => isDarkMode ? `rgba(224, 224, 224, ${opacity})` : `rgba(50, 50, 50, ${opacity})`,
         style: { borderRadius: 16 },
         propsForDots: { r: '4', strokeWidth: '2', stroke: isDarkMode ? '#00796B' : '#388e3c' },
+        propsForLabels: { fontSize: 10, fontWeight: 'bold' },
+        // fillShadowGradientFromOpacity: 0.5, // Optional visual improvements
+        // fillShadowGradientToOpacity: 0.1,
     };
     
     if (isLoading) {
@@ -275,15 +319,17 @@ const ReportsScreen = ({ navigation, language, isDarkMode }) => {
     const isChartDataValid = chartData.datasets.length > 0 && chartData.datasets.every(ds => ds.data && ds.data.length > 0) && chartData.labels.length > 0;
     
     let tooltipStyle = {}; 
-    const tooltipWidth = 120;
-    
+    const tooltipWidth = 100;
+    const tooltipHeight = 45;
+    const screenWidth = Dimensions.get('window').width;
+
     if (tooltip) {
-        const chartWidth = Dimensions.get('window').width - 40;
-        let left = tooltip.x - (tooltipWidth / 2) - 25; 
-        if (left < 5) left = 5;
-        if (left + tooltipWidth > chartWidth) left = chartWidth - tooltipWidth - 5;
-        if (tooltip.index === 0) left = left + -26;
-        tooltipStyle = { top: tooltip.y - -35, left: left };
+        const chartWidth = screenWidth - 40;
+        let left = tooltip.x - (tooltipWidth / 2);
+        let top = tooltip.y - tooltipHeight - 10; 
+        if (left < 0) left = 0;
+        if (left + tooltipWidth > chartWidth) left = chartWidth - tooltipWidth;
+        tooltipStyle = { position: 'absolute', top: top, left: left, width: tooltipWidth, height: tooltipHeight, alignItems: 'center', justifyContent: 'center', zIndex: 100 };
     }
 
     return (
@@ -329,19 +375,50 @@ const ReportsScreen = ({ navigation, language, isDarkMode }) => {
                             </View>
 
                             {isChartDataValid ? (
-                                <>
-                                    <LineChart data={chartData} width={Dimensions.get('window').width - 40} height={240} chartConfig={chartConfig} bezier style={{ borderRadius: 16 }} fromZero onDataPointClick={({ value, x, y, index, dataset }) => { setTooltip(prev => { const datasetIndex = chartData.datasets.findIndex(d => d.legend === dataset.legend); if (prev && prev.index === index && prev.datasetIndex === datasetIndex) { return null; } const unit = datasetIndex === 0 ? ` ${t.steps}` : ` ${t.caloriesConsumed}`; return { x, y, value, index, datasetIndex, unit }; }); }} />
-                                    {tooltip && (
-                                        <View style={[styles.tooltipWrapper, tooltipStyle]}>
-                                            <View style={styles.tooltipContent}>
+                                <View style={{ alignItems: 'center' }}>
+                                    {/* 
+                                        تعديل هام جداً:
+                                        direction: 'ltr' تجبر الرسم البياني أن يبدأ من اليسار (الماضي) إلى اليمين (الحاضر)
+                                        حتى لو كان الجهاز بالعربي. هذا يحل مشكلة الترتيب المقلوب.
+                                    */}
+                                    <View style={{ 
+    direction: 'ltr', // خليها LTR دايماً عشان الرسم البياني يطلع مظبوط في كل اللغات
+    width: screenWidth - 40, 
+    alignSelf: 'center' 
+}}>
+                                        <LineChart 
+                                            data={chartData} 
+                                            width={screenWidth - 40} 
+                                            height={240} 
+                                            chartConfig={chartConfig} 
+                                            bezier 
+                                            style={{ borderRadius: 16 }} 
+                                            fromZero 
+                                            // خاصية هامة لمنع قطع النص في الجوانب عند التحويل
+                                            withInnerLines={true}
+                                            segments={4}
+                                            onDataPointClick={({ value, x, y, index, dataset }) => { 
+                                                const datasetIndex = chartData.datasets.findIndex(d => d.legend === dataset.legend);
+                                                if (tooltip && tooltip.index === index && tooltip.datasetIndex === datasetIndex) { 
+                                                    setTooltip(null); 
+                                                } else {
+                                                    const unit = datasetIndex === 0 ? ` ${t.steps}` : ` ${t.caloriesConsumed}`; 
+                                                    setTooltip({ x, y, value, index, datasetIndex, unit }); 
+                                                }
+                                            }} 
+                                        />
+                                        {tooltip && (
+                                            <View style={tooltipStyle}>
                                                 <View style={styles.tooltipContainer}>
-                                                    <Text style={styles.tooltipText} numberOfLines={1}>{Math.round(tooltip.value).toLocaleString(language === 'ar' ? 'ar-EG' : 'en-US')}{tooltip.unit}</Text>
+                                                    <Text style={styles.tooltipText} numberOfLines={1}>
+                                                        {Math.round(tooltip.value).toLocaleString(language === 'ar' ? 'ar-EG' : 'en-US')}{tooltip.unit}
+                                                    </Text>
                                                 </View>
                                                 <View style={styles.tooltipArrow} />
                                             </View>
-                                        </View>
-                                    )}
-                                </>
+                                        )}
+                                    </View>
+                                </View>
                             ) : (
                                 <View style={{height: 240, justifyContent: 'center', alignItems: 'center'}}><Text style={{color: isDarkMode ? '#777' : '#999'}}>No Data Available</Text></View>
                             )}
@@ -373,45 +450,22 @@ const getStyles = (isDark) => StyleSheet.create({
     summaryCard: { width: '48%', backgroundColor: isDark ? '#1E1E1E' : '#FFFFFF', borderRadius: 16, paddingVertical: 20, paddingHorizontal: 10, marginBottom: 16, alignItems: 'center', shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: isDark ? 0.2 : 0.05, shadowRadius: 4, elevation: 4 },
     summaryValue: { fontSize: 26, fontWeight: 'bold', color: isDark ? '#81C784' : '#388e3c', fontVariant: ['tabular-nums'] },
     summaryUnit: { fontSize: 14, fontWeight: 'normal', color: isDark ? '#81C784' : '#388e3c' },
-    summaryLabel: { fontSize: 11, color: isDark ? '#B0B0B0' : '#757575', marginTop: 8, textAlign: 'center', textTransform: 'uppercase' },
+    summaryLabel: { fontSize: 11, color: isDark ? '#B0B0B0' : '#757575', marginTop: 8, textAlign: 'center' },
     changeBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10, marginTop: 10 },
     changeText: { color: '#fff', fontWeight: 'bold', fontSize: 12, marginLeft: 4 },
     chartContainer: { marginTop: 20, backgroundColor: isDark ? '#1E1E1E' : '#FFFFFF', borderRadius: 16, paddingVertical: 20, alignItems: 'center', shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: isDark ? 0.2 : 0.08, shadowRadius: 4, elevation: 4 },
     chartTitle: { fontSize: 18, fontWeight: '600', color: isDark ? '#E0E0E0' : '#34495e', marginBottom: 10, alignSelf: 'flex-start', paddingLeft: 20 },
+    legendContainer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 15, marginTop: -5 },
+    legendItem: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 15 },
+    legendDot: { width: 12, height: 12, borderRadius: 6, marginRight: 8 },
+    legendText: { fontSize: 14, color: isDark ? '#B0B0B0' : '#757575' },
     
-    // ========================> ✨ بداية الإضافة ✨ <========================
-    // الخطوة 2: إضافة الأنماط اللازمة للمفتاح
-    legendContainer: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 15,
-        marginTop: -5,
-    },
-    legendItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginHorizontal: 15,
-    },
-    legendDot: {
-        width: 12,
-        height: 12,
-        borderRadius: 6,
-        marginRight: 8,
-    },
-    legendText: {
-        fontSize: 14,
-        color: isDark ? '#B0B0B0' : '#757575',
-    },
-    // ========================> 🔚 نهاية الإضافة 🔚 <========================
-
-    tooltipWrapper: { position: 'absolute', zIndex: 10, },
-    tooltipContent: { alignItems: 'center', },
-    tooltipContainer: { width: 120, backgroundColor: 'black', paddingVertical: 6, paddingHorizontal: 8, borderRadius: 6, elevation: 5, alignItems: 'center', },
+    tooltipContainer: { width: 120, backgroundColor: 'black', paddingVertical: 6, paddingHorizontal: 8, borderRadius: 6, elevation: 5, alignItems: 'center' },
     tooltipText: { color: 'white', fontWeight: 'bold', textAlign: 'center' },
-    tooltipArrow: { width: 0, height: 0, borderLeftWidth: 6, borderRightWidth: 6, borderTopWidth: 6, borderStyle: 'solid', backgroundColor: 'transparent', borderLeftColor: 'transparent', borderRightColor: 'transparent', borderTopColor: 'black' },
-    premiumLockOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', backgroundColor: isDark ? 'rgba(18, 18, 18, 0.9)' : 'rgba(247, 253, 249, 0.95)', zIndex: 10, },
-    premiumLockContentBox: { width: '90%', maxWidth: 400, backgroundColor: isDark ? '#1E1E1E' : '#FFFFFF', borderRadius: 16, padding: 30, alignItems: 'center', shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 3.84, elevation: 5, },
+    tooltipArrow: { width: 0, height: 0, borderLeftWidth: 6, borderRightWidth: 6, borderTopWidth: 6, borderStyle: 'solid', backgroundColor: 'transparent', borderLeftColor: 'transparent', borderRightColor: 'transparent', borderTopColor: 'black', marginTop: -1 },
+    
+    premiumLockOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', backgroundColor: isDark ? 'rgba(18, 18, 18, 0.9)' : 'rgba(247, 253, 249, 0.95)', zIndex: 10 },
+    premiumLockContentBox: { width: '90%', maxWidth: 400, backgroundColor: isDark ? '#1E1E1E' : '#FFFFFF', borderRadius: 16, padding: 30, alignItems: 'center', shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 3.84, elevation: 5 },
     premiumLockIcon: { color: '#4CAF50', marginBottom: 20 },
     premiumLockTitle: { fontSize: 22, fontWeight: 'bold', color: isDark ? '#E0E0E0' : '#333', textAlign: 'center', marginBottom: 15 },
     premiumLockMessage: { fontSize: 16, color: isDark ? '#B0B0B0' : '#757575', textAlign: 'center', lineHeight: 24, marginBottom: 30 },

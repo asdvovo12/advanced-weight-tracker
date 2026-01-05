@@ -13,6 +13,7 @@ import {
   Pressable,
   Platform,
   Animated,
+  ActivityIndicator
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Svg, { Circle, Path } from 'react-native-svg';
@@ -20,9 +21,9 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import MaterialIcon from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcon from 'react-native-vector-icons/MaterialCommunityIcons';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
-import { supabase } from './supabaseClient'; // Ensure this path is correct
+import { supabase } from './supabaseClient'; 
 
-// Placeholders for sub-components if they aren't available in this file scope
+// Placeholders for sub-components
 import WeeklyTime from './weeklytime';
 import MonthlyTime from './monthlytime';
 
@@ -94,6 +95,16 @@ const translations = {
 };
 
 const { width } = Dimensions.get('window');
+
+// *** تعديلات الأبعاد لتطابق كود المسافة ***
+const CIRCLE_SIZE = width * 0.60;
+const CIRCLE_BORDER_WIDTH = 15;
+const SVG_VIEWBOX_SIZE = CIRCLE_SIZE;
+const PATH_RADIUS = (CIRCLE_SIZE / 2) - (CIRCLE_BORDER_WIDTH / 2);
+const CENTER_X = SVG_VIEWBOX_SIZE / 2;
+const CENTER_Y = SVG_VIEWBOX_SIZE / 2;
+const ICON_SIZE = 22; // حجم النقطة
+
 const chartHeight = 200;
 const MENU_VERTICAL_OFFSET = 5;
 const CHALLENGE_DURATIONS = [7, 14, 30];
@@ -128,6 +139,33 @@ const describeArc = (x, y, radius, startAngleDeg, endAngleDeg) => {
   const sweepFlag = '1';
   const d = ['M', startX, startY, 'A', radius, radius, 0, largeArcFlag, sweepFlag, endX, endY].join(' ');
   return d;
+};
+
+// *** دالة حساب موقع النقطة (مطابقة لكود المسافة) ***
+const calculateIconPositionOnPath = (angleDegrees) => { 
+    const angleRad = (angleDegrees * Math.PI) / 180; 
+    const iconRadius = PATH_RADIUS; 
+    
+    // نفس المنطق المستخدم في صفحة المسافة
+    const xOffset = -iconRadius * Math.sin(angleRad); 
+    const yOffset = -iconRadius * Math.cos(angleRad); 
+
+    const iconCenterX = CENTER_X + xOffset; 
+    const iconCenterY = CENTER_Y + yOffset; 
+
+    const top = iconCenterY - (ICON_SIZE / 2); 
+    const left = iconCenterX - (ICON_SIZE / 2); 
+
+    return { 
+        position: 'absolute', 
+        width: ICON_SIZE, 
+        height: ICON_SIZE, 
+        top, 
+        left, 
+        zIndex: 10, 
+        justifyContent: 'center', 
+        alignItems: 'center' 
+    }; 
 };
 
 const getDateString = (date) => {
@@ -296,13 +334,13 @@ const DayView = ({ goalHour, goalMinute, onOpenGoalModal, activeTimeForDate, cur
   const calculatedSteps = timeToUseForDisplay * STEPS_PER_MINUTE;
   const calculatedCalories = calculatedSteps * CALORIES_PER_STEP;
   const calculatedDistanceKm = (calculatedSteps * STEP_LENGTH_METERS) / 1000;
-  const radius = 100;
-  const svgSize = radius * 2 + 20;
+
+  // إعدادات التقدم والأنيميشن
   const progress = goalInMinutes > 0 ? (activeTimeForDate / goalInMinutes) * 100 : 0;
   const clampedProgress = Math.min(100, Math.max(0, progress));
   const animatedAngle = useRef(new Animated.Value(0)).current;
-  const [dynamicDotStyle, setDynamicDotStyle] = useState({});
-  const MOVING_DOT_SIZE = 16;
+  const [dynamicDotStyle, setDynamicDotStyle] = useState(() => calculateIconPositionOnPath(0));
+  
   const targetAngle = clampedProgress > 0 ? clampedProgress * 3.6 : 0;
   const formatTime = (num) => num.toString().padStart(2, '0');
   const animatedTime = useRef(new Animated.Value(timeToUseForDisplay)).current;
@@ -313,18 +351,6 @@ const DayView = ({ goalHour, goalMinute, onOpenGoalModal, activeTimeForDate, cur
   });
   const [progressPathD, setProgressPathD] = useState('');
 
-  const calculateDotPosition = useCallback((angleDegrees) => {
-    const angleRad = (angleDegrees - 90) * (Math.PI / 180);
-    const pathRadius = radius;
-    const xOffset = pathRadius * Math.cos(angleRad);
-    const yOffset = pathRadius * Math.sin(angleRad);
-    const iconCenterX = svgSize / 2 + xOffset;
-    const iconCenterY = svgSize / 2 + yOffset;
-    const top = iconCenterY - (MOVING_DOT_SIZE / 2);
-    const left = iconCenterX - (MOVING_DOT_SIZE / 2);
-    return { position: 'absolute', top, left, zIndex: 10 };
-  }, [radius, svgSize]);
-
   const isViewingToday = isToday(currentDate);
 
   useEffect(() => {
@@ -334,8 +360,9 @@ const DayView = ({ goalHour, goalMinute, onOpenGoalModal, activeTimeForDate, cur
 
   useEffect(() => {
     const listenerId = animatedAngle.addListener(({ value }) => {
-      setDynamicDotStyle(calculateDotPosition(value));
-      setProgressPathD(describeArc(radius + 10, radius + 10, radius, 0.01, value));
+      setDynamicDotStyle(calculateIconPositionOnPath(value));
+      // استخدم 0.01 كبداية لتجنب مشاكل الرسم عند 0
+      setProgressPathD(value > 0.01 ? describeArc(CENTER_X, CENTER_Y, PATH_RADIUS, 0.01, value) : '');
     });
     const timeListenerId = animatedTime.addListener(v => {
       const totalMinutes = v.value;
@@ -344,7 +371,7 @@ const DayView = ({ goalHour, goalMinute, onOpenGoalModal, activeTimeForDate, cur
       setDisplayTimeText(`${formatTime(h)}:${formatTime(m)}`);
     });
     return () => { animatedAngle.removeListener(listenerId); animatedTime.removeListener(timeListenerId); };
-  }, [animatedAngle, animatedTime, calculateDotPosition, radius]);
+  }, [animatedAngle, animatedTime]);
 
   return (
     <View style={currentStyles.dayViewContainer}>
@@ -358,25 +385,29 @@ const DayView = ({ goalHour, goalMinute, onOpenGoalModal, activeTimeForDate, cur
         </TouchableOpacity>
       </View>
 
-      <View style={currentStyles.progressContainer}>
-        <Svg width={svgSize} height={svgSize}>
-          <Circle stroke={currentStyles.progressCircleBackground.stroke} fill="none" cx={radius + 10} cy={radius + 10} r={radius} strokeWidth={12} />
-          <Path d={progressPathD} stroke={currentStyles.progressCircleForeground.stroke} fill="none" strokeWidth={12} strokeLinecap="round" />
-        </Svg>
-        
-        {/* FIX: Using ternary operator instead of && to prevent text rendering error */}
-        {/* If this used && with '0', React tries to render '0' as text which crashes the app */}
-        {(clampedProgress > 0.1 && clampedProgress < 99.9) ? (
-          <Animated.View style={[currentStyles.movingDot, dynamicDotStyle]} />
-        ) : null}
+      {/* *** الهيكلية الجديدة للدائرة لتطابق صفحة المسافة *** */}
+      <View style={currentStyles.progressCircleContainer}>
+        <View style={currentStyles.circle}>
+          <Svg width={SVG_VIEWBOX_SIZE} height={SVG_VIEWBOX_SIZE} viewBox={`0 0 ${SVG_VIEWBOX_SIZE} ${SVG_VIEWBOX_SIZE}`}>
+            <Circle stroke={currentStyles.progressCircleBackground.stroke} fill="none" cx={CENTER_X} cy={CENTER_Y} r={PATH_RADIUS} strokeWidth={CIRCLE_BORDER_WIDTH} />
+            <Path d={progressPathD} stroke={currentStyles.progressCircleForeground.stroke} fill="none" strokeWidth={CIRCLE_BORDER_WIDTH} strokeLinecap="round" />
+          </Svg>
+          
+          {/* محتوى الدائرة (النص والأيقونة) - Overlay */}
+          <View style={currentStyles.circleContentOverlay}>
+            <MaterialIcon name="timer" size={30} color={currentStyles.timerIcon.color} />
+            <Text style={currentStyles.timerText}>{displayTimeText}</Text>
+            <TouchableOpacity style={currentStyles.goalContainer} onPress={onOpenGoalModal}>
+                <Text style={currentStyles.goalText}>{translation.goalPrefix}: {formatTime(goalHour)}:{formatTime(goalMinute)}</Text>
+                <MaterialIcon name="edit" size={16} color={currentStyles.goalText.color} style={{ [I18nManager.isRTL ? 'marginRight' : 'marginLeft']: 5 }} />
+            </TouchableOpacity>
+          </View>
 
-        <View style={currentStyles.progressTextContainer}>
-          <MaterialIcon name="timer" size={28} color={currentStyles.timerIcon.color} />
-          <Text style={currentStyles.timerText}>{displayTimeText}</Text>
-          <TouchableOpacity style={currentStyles.goalContainer} onPress={onOpenGoalModal}>
-            <Text style={currentStyles.goalText}>{translation.goalPrefix}: {formatTime(goalHour)}:{formatTime(goalMinute)}</Text>
-            <MaterialIcon name="edit" size={16} color={currentStyles.goalText.color} style={{ [I18nManager.isRTL ? 'marginRight' : 'marginLeft']: 5 }} />
-          </TouchableOpacity>
+          {/* تم إزالة الشرط هنا لتظهر النقطة دائماً */}
+          <Animated.View style={dynamicDotStyle}>
+               <View style={[currentStyles.movingDot, { borderColor: currentStyles.container.backgroundColor }]} />
+          </Animated.View>
+          
         </View>
       </View>
 
@@ -431,7 +462,17 @@ const WeekView = ({ weeklyTimeData, onTestIncrement, onResetData, currentStyles,
   const displayDayIndex = (jsDayIndex - startOfWeekDay + 7) % 7;
   const locale = language === 'ar' ? 'ar-EG' : 'en-US';
 
+  // اتجاه الجدول (كما طلبت سابقاً)
+  const chartDirection = language === 'ar' ? 'row' : 'row-reverse';
+  
+  // *** التعديل الجديد هنا: محاذاة العنوان ***
+  // عربي = flex-start (يسار/شمال)
+  // إنجليزي = flex-end (يمين)
+  const headerAlign = language === 'ar' ? 'flex-start' : 'flex-end';
+
+  // ... (نفس دوال الهاندلر: handleBarPress, handleOutsidePress)
   const handleBarPress = useCallback((index, value) => {
+    // ... (نفس الكود)
     const numericValue = value || 0;
     if (tooltipVisible && selectedBarIndex === index) {
       setTooltipVisible(false);
@@ -447,6 +488,7 @@ const WeekView = ({ weeklyTimeData, onTestIncrement, onResetData, currentStyles,
   }, [tooltipVisible, selectedBarIndex]);
 
   const handleOutsidePress = useCallback(() => {
+    // ... (نفس الكود)
     if (tooltipVisible) {
       setTooltipVisible(false);
       setSelectedBarIndex(null);
@@ -456,9 +498,12 @@ const WeekView = ({ weeklyTimeData, onTestIncrement, onResetData, currentStyles,
 
   return (
     <Pressable style={currentStyles.card} onPress={handleOutsidePress}>
-      <View style={currentStyles.chartHeader}>
+      
+      {/* تطبيق المحاذاة الديناميكية هنا */}
+      <View style={[currentStyles.chartHeader, { alignItems: headerAlign }]}>
         <Text style={currentStyles.weekChartTitle}>{translation.weekStatsTitle} <Text style={currentStyles.weekChartSubtitle}>{translation.weekStatsUnit}</Text></Text>
       </View>
+
       <View style={currentStyles.testButtonsContainer}>
         <TouchableOpacity onPress={onTestIncrement} style={currentStyles.testButton}>
           <Text style={currentStyles.testButtonText}>{translation.testButton}</Text>
@@ -467,14 +512,16 @@ const WeekView = ({ weeklyTimeData, onTestIncrement, onResetData, currentStyles,
           <Text style={currentStyles.testButtonText}>{translation.resetButton}</Text>
         </TouchableOpacity>
       </View>
-      <View style={currentStyles.chartAreaContainer}>
+      
+      <View style={[currentStyles.chartAreaContainer, { flexDirection: chartDirection }]}>
         <View style={currentStyles.yAxisLabels}>
           {[Math.round(maxVal), Math.round(maxVal * 0.75), Math.round(maxVal * 0.5), Math.round(maxVal * 0.25), 0].map(label =>
             <Text key={label} style={currentStyles.axisLabelY}>{label}</Text>
           )}
         </View>
-        <View style={currentStyles.chartContent}>
-          <View style={currentStyles.barsAndLabelsContainer}>
+        
+        <View style={[currentStyles.chartContent, { [language === 'ar' ? 'marginLeft' : 'marginRight']: 10 }]}>
+          <View style={[currentStyles.barsAndLabelsContainer, { flexDirection: chartDirection }]}>
             {days.map((dayName, index) => {
               const value = weeklyTimeData[index] || 0;
               const barHeight = maxVal > 0 ? Math.min(chartHeight, (value / maxVal) * chartHeight) : 0;
@@ -485,7 +532,9 @@ const WeekView = ({ weeklyTimeData, onTestIncrement, onResetData, currentStyles,
                   {tooltipVisible && isSelected && selectedBarValue !== null && (
                     <View style={[currentStyles.tooltipPositioner, { bottom: barHeight + TOOLTIP_OFFSET }]}>
                       <View style={currentStyles.tooltipBox}>
-                        <Text style={currentStyles.tooltipText}>{selectedBarValue.toLocaleString(locale)} {translation.tooltipUnit}</Text>
+                        <Text style={currentStyles.tooltipText} numberOfLines={1}>
+                          {selectedBarValue.toLocaleString(locale)} {translation.tooltipUnit}
+                        </Text>
                       </View>
                       <View style={currentStyles.tooltipArrow} />
                     </View>
@@ -738,15 +787,20 @@ const lightStyles = StyleSheet.create({
   dayHeaderArrow: { color: '#2e7d32' },
   dayHeaderArrowDisabled: { color: '#a5d6a7' },
 
-  progressContainer: { marginVertical: 20, alignItems: 'center', justifyContent: 'center', position: 'relative' },
+  // *** أنماط الدائرة الجديدة (مثل كود المسافة) ***
+  progressCircleContainer: { width: '100%', alignItems: 'center', marginVertical: 5, paddingBottom: 10, paddingHorizontal: 15 },
+  circle: { width: CIRCLE_SIZE, height: CIRCLE_SIZE, justifyContent: 'center', alignItems: 'center', position: 'relative' },
   progressCircleBackground: { stroke: '#e0f2f1' },
   progressCircleForeground: { stroke: '#4caf50' },
-  progressTextContainer: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },
+  circleContentOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', zIndex: 1, padding: CIRCLE_BORDER_WIDTH + 5 },
+  
   timerIcon: { color: '#388e3c' },
-  timerText: { fontSize: 60, fontWeight: 'bold', color: '#388e3c', fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium', fontVariant: ['tabular-nums'] },
-  goalContainer: { flexDirection: 'row-reverse', alignItems: 'center', marginTop: 8, padding: 5 },
-  goalText: { fontSize: 16, color: '#757575' },
-  statsContainer: { flexDirection: 'row-reverse', justifyContent: 'space-around', width: '100%', marginTop: 20 },
+  timerText: { fontSize: 56, fontWeight: 'bold', color: '#388e3c', lineHeight: 64, marginVertical: 5, fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium', fontVariant: ['tabular-nums'] },
+  goalContainer: { flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row', alignItems: 'center', padding: 5 },
+  goalText: { fontSize: 14, color: '#757575' },
+  movingDot: { width: ICON_SIZE, height: ICON_SIZE, borderRadius: ICON_SIZE / 2, backgroundColor: '#4caf50', borderWidth: 2 },
+  
+  statsContainer: { flexDirection: 'row-reverse', justifyContent: 'space-around', width: '100%', marginTop: 25 },
   statItem: { alignItems: 'center', flex: 1 },
   statIconCircle: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#e0f2f1', alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   animatedStatIcon: { color: '#4caf50' },
@@ -770,7 +824,10 @@ const lightStyles = StyleSheet.create({
   axisLabelX: { color: '#757575', marginTop: 8, fontSize: 12 },
   activeDayLabel: { color: '#000000', fontWeight: 'bold' },
   tooltipPositioner: { position: 'absolute', alignSelf: 'center', alignItems: 'center', zIndex: 10, minWidth: 40 },
-  tooltipBox: { backgroundColor: '#333333', borderRadius: 5, paddingVertical: 4, paddingHorizontal: 8, elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 1 },
+  
+  // *** تم تعديل tooltipBox لضمان العرض ***
+  tooltipBox: { width: 70, backgroundColor: '#333333', borderRadius: 5, paddingVertical: 6, alignItems: 'center', justifyContent: 'center', elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 1 },
+  
   tooltipText: { color: '#FFFFFF', fontSize: 12, fontWeight: 'bold', textAlign: 'center' },
   tooltipArrow: { position: 'absolute', bottom: -TOOLTIP_ARROW_HEIGHT, width: 0, height: 0, borderLeftWidth: 6, borderRightWidth: 6, borderTopWidth: TOOLTIP_ARROW_HEIGHT, borderLeftColor: 'transparent', borderRightColor: 'transparent', borderTopColor: '#333333', alignSelf: 'center' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.4)', justifyContent: 'center', alignItems: 'center', padding: 20 },
@@ -791,8 +848,13 @@ const lightStyles = StyleSheet.create({
   saveButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   cancelButton: { backgroundColor: '#f5f5f5', width: '100%', padding: 16, borderRadius: 16, alignItems: 'center', marginTop: 12 },
   cancelButtonText: { color: '#757575', fontSize: 16, fontWeight: 'bold' },
-  challengeCardWrapper: { width: '100%', alignItems: 'center', marginBottom: 20 },
+challengeCardWrapper: { width: '100%', alignItems: 'center', marginBottom: 20 },
   summaryCard: { flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff', borderRadius: 15, padding: 15, width: '100%', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2 },
+  badgeContainer: { width: BADGE_CONTAINER_SIZE, height: BADGE_CONTAINER_SIZE, justifyContent: 'center', alignItems: 'center', position: 'relative' },
+  badgeTextContainer: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center' },
+  badgeBackgroundCircle: { stroke: "#e0f2f1" },
+  badgeProgressCircle: { stroke: "#4caf50" },
+  badgeText: { fontSize: 16, fontWeight: 'bold', color: '#4caf50', fontVariant: ['tabular-nums'], textAlign: 'center' },
   summaryTextContainer: { alignItems: I18nManager.isRTL ? 'flex-end' : 'flex-start', flex: 1, marginHorizontal: 12 },
   summaryMainText: { fontSize: 18, fontWeight: 'bold', color: '#424242', textAlign: I18nManager.isRTL ? 'right' : 'left' },
   summarySubText: { fontSize: 14, color: '#757575', marginTop: 4, textAlign: I18nManager.isRTL ? 'right' : 'left' },
@@ -800,7 +862,6 @@ const lightStyles = StyleSheet.create({
   badgeBackgroundCircle: { stroke: "#e0f2f1" },
   badgeProgressCircle: { stroke: "#4caf50" },
   badgeText: { fontSize: 16, fontWeight: 'bold', color: '#4caf50', fontVariant: ['tabular-nums'] },
-  movingDot: { width: 16, height: 16, borderRadius: 8, backgroundColor: '#4caf50', borderWidth: 2, borderColor: '#F7FDF9' },
 });
 
 const darkStyles = StyleSheet.create({
@@ -823,11 +884,14 @@ const darkStyles = StyleSheet.create({
   dayHeaderTitle: { fontSize: 20, fontWeight: 'bold', color: '#80CBC4' },
   dayHeaderArrow: { color: '#80CBC4' },
   dayHeaderArrowDisabled: { color: '#004D40' },
+  
   progressCircleBackground: { stroke: '#333333' },
   progressCircleForeground: { stroke: '#80CBC4' },
   timerIcon: { color: '#80CBC4' },
-  timerText: { fontSize: 60, fontWeight: 'bold', color: '#80CBC4', fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium', fontVariant: ['tabular-nums'] },
-  goalText: { fontSize: 16, color: '#B0B0B0' },
+  timerText: { fontSize: 56, fontWeight: 'bold', color: '#80CBC4', lineHeight: 64, marginVertical: 5, fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium', fontVariant: ['tabular-nums'] },
+  goalText: { fontSize: 14, color: '#B0B0B0' },
+  movingDot: { width: ICON_SIZE, height: ICON_SIZE, borderRadius: ICON_SIZE / 2, backgroundColor: '#80CBC4', borderWidth: 2 },
+
   statIconCircle: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#2C2C2C', alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   animatedStatIcon: { color: '#80CBC4' },
   statValue: { fontSize: 20, fontWeight: 'bold', color: '#E0E0E0', fontVariant: ['tabular-nums'] },
@@ -842,7 +906,10 @@ const darkStyles = StyleSheet.create({
   axisLabelY: { color: '#B0B0B0', fontSize: 12 },
   axisLabelX: { color: '#B0B0B0', marginTop: 8, fontSize: 12 },
   activeDayLabel: { color: '#FFFFFF', fontWeight: 'bold' },
-  tooltipBox: { backgroundColor: '#E0E0E0', borderRadius: 5, paddingVertical: 4, paddingHorizontal: 8, elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 1 },
+  
+  // *** تم تعديل tooltipBox لضمان العرض ***
+  tooltipBox: { width: 100, backgroundColor: '#E0E0E0', borderRadius: 5, paddingVertical: 6, alignItems: 'center', justifyContent: 'center', elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 1 },
+  
   tooltipText: { color: '#121212', fontSize: 12, fontWeight: 'bold', textAlign: 'center' },
   tooltipArrow: { position: 'absolute', bottom: -TOOLTIP_ARROW_HEIGHT, width: 0, height: 0, borderLeftWidth: 6, borderRightWidth: 6, borderTopWidth: TOOLTIP_ARROW_HEIGHT, borderLeftColor: 'transparent', borderRightColor: 'transparent', borderTopColor: '#E0E0E0', alignSelf: 'center' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.7)', justifyContent: 'center', alignItems: 'center', padding: 20 },
@@ -865,7 +932,6 @@ const darkStyles = StyleSheet.create({
   badgeBackgroundCircle: { stroke: "#333333" },
   badgeProgressCircle: { stroke: "#80CBC4" },
   badgeText: { fontSize: 16, fontWeight: 'bold', color: '#80CBC4', fontVariant: ['tabular-nums'] },
-  movingDot: { width: 16, height: 16, borderRadius: 8, backgroundColor: '#80CBC4', borderWidth: 2, borderColor: '#121212' },
 });
 
 export default ActiveTimeScreen;

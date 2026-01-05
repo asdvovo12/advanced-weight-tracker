@@ -8,7 +8,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { LineChart } from 'react-native-chart-kit';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { supabase } from './supabaseClient'; // 1. استيراد Supabase (مهم جداً)
+import { supabase } from './supabaseClient';
 import tips from './tips';
 
 // --- استيراد الأيقونات والمكونات ---
@@ -33,11 +33,9 @@ const USER_SUBSCRIPTION_DATA_KEY = '@App:userSubscriptionData';
 // --- بيانات وترجمات ---
 const initialWeightHistory = [
   { date: '2024-05-22', weight: 85.0 }, 
-  // ... (باقي البيانات الافتراضية)
 ];
 
 const translations = {
-  // ... (نفس الترجمات اللي عندك بالظبط)
   en: {
     weightTracker: 'Weight Tracker', currentStatus: 'Current Status', lastUpdate: 'Last update:', starting: 'Starting', goal: 'Goal', bmi: 'BMI', progressChart: 'Progress Chart', last7Entries: 'Last 7 Entries', history: 'History', logYourWeight: 'Log Your Weight', weightPlaceholder: 'e.g., 85.5', cancel: 'Cancel', save: 'Save', invalidInputTitle: 'Invalid Input', invalidInputMessage: 'Please enter a valid number for your weight.', unrealisticValueTitle: 'Unrealistic Value', unrealisticValueMessage: 'Please enter a weight between 20 and 400 kg.', alreadyLoggedTitle: 'Already Logged', alreadyLoggedMessage: 'You have already logged your weight for today. Would you like to update it?', update: 'Update', kg: 'kg', dailyTip: 'Daily Tip',
     weightNavLabel: 'Weight', foodNavLabel: 'Food', waterNavLabel: 'Water', stepsNavLabel: 'Steps', reportsNavLabel: 'Reports',
@@ -75,7 +73,6 @@ const WeightTracker = ({ navigation, language, darkMode }) => {
   const [liveStepsForAchievements, setLiveStepsForAchievements] = useState(0);
   const [isUserPremium, setIsUserPremium] = useState(false);
 
-  // ... (useFocusEffect الخاص بالاشتراك زي ما هو)
   useFocusEffect(
     useCallback(() => {
       const checkUserStatus = async () => {
@@ -101,7 +98,6 @@ const WeightTracker = ({ navigation, language, darkMode }) => {
   );
 
   const handlePremiumFeaturePress = () => {
-    // ... (نفس الكود)
     const t = (key) => translations[language][key] || key;
     Alert.alert(
       t('premiumFeatureTitle'),
@@ -113,14 +109,10 @@ const WeightTracker = ({ navigation, language, darkMode }) => {
     );
   };
 
-  // -------------------------------------------------------------
-  // 2. تحميل البيانات (Download): هنا التغيير الكبير
-  // -------------------------------------------------------------
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
       try {
-        // أ. جلب إعدادات المستخدم محلياً
         const settingsString = await AsyncStorage.getItem('@Settings:generalSettings');
         if (settingsString) {
           const settings = JSON.parse(settingsString);
@@ -128,11 +120,9 @@ const WeightTracker = ({ navigation, language, darkMode }) => {
           if (settings.height) setUserHeight(parseFloat(settings.height) / 100);
         }
 
-        // ب. محاولة جلب البيانات من Supabase (السحابة) أولاً
         const { data: { user } } = await supabase.auth.getUser();
         
         if (user) {
-            // لو المستخدم مسجل، هات بياناته من جدول weights
             const { data: cloudWeights, error } = await supabase
                 .from('weights')
                 .select('*')
@@ -140,22 +130,18 @@ const WeightTracker = ({ navigation, language, darkMode }) => {
                 .order('date', { ascending: false });
 
             if (!error && cloudWeights && cloudWeights.length > 0) {
-                // تحويل البيانات لشكل يفهمه التطبيق { date, weight }
                 const formattedHistory = cloudWeights.map(item => ({
                     date: item.date,
                     weight: item.weight
                 }));
                 setHistory(formattedHistory);
-                // تحديث النسخة المحلية عشان المرة الجاية تكون أسرع
                 await AsyncStorage.setItem('@WeightTracker:history', JSON.stringify(formattedHistory));
             } else {
-                // لو مفيش نت أو مفيش بيانات في السحابة، اعتمد على المحلي
                 const storedHistory = await AsyncStorage.getItem('@WeightTracker:history');
                 const parsedHistory = storedHistory ? JSON.parse(storedHistory) : null;
                 setHistory(parsedHistory && parsedHistory.length > 0 ? parsedHistory : initialWeightHistory);
             }
         } else {
-            // لو مش مسجل دخول، اشتغل محلي بس
             const storedHistory = await AsyncStorage.getItem('@WeightTracker:history');
             const parsedHistory = storedHistory ? JSON.parse(storedHistory) : null;
             setHistory(parsedHistory && parsedHistory.length > 0 ? parsedHistory : initialWeightHistory);
@@ -169,16 +155,14 @@ const WeightTracker = ({ navigation, language, darkMode }) => {
       }
     };
     loadData();
-  }, []); // Run once on mount
+  }, []);
 
-  // هذا الـ Effect يحفظ محلياً دائماً كنسخة احتياطية
   useEffect(() => {
     if (!isLoading) {
       AsyncStorage.setItem('@WeightTracker:history', JSON.stringify(history));
     }
   }, [history, isLoading]);
   
-  // ... (تحديث النصيحة اليومية زي ما هو)
   useEffect(() => {
     const updateDailyTip = (currentLang) => {
       if (tips[currentLang] && tips[currentLang].length > 0) {
@@ -194,13 +178,9 @@ const WeightTracker = ({ navigation, language, darkMode }) => {
   
   const hideTooltip = () => setTooltip(null);
   
-  // -------------------------------------------------------------
-  // 3. إضافة وتحديث الوزن (Upload): هنا التغيير الثاني
-  // -------------------------------------------------------------
   const handleAddWeight = async () => {
     const t = (key) => translations[language][key] || key;
     
-    // التحقق من صحة المدخلات
     if (!newWeight || isNaN(parseFloat(newWeight))) { Alert.alert(t('invalidInputTitle'), t('invalidInputMessage')); return; }
     const weightValue = parseFloat(newWeight);
     if (weightValue <= 20 || weightValue >= 400) { Alert.alert(t('unrealisticValueTitle'), t('unrealisticValueMessage')); return; }
@@ -209,7 +189,6 @@ const WeightTracker = ({ navigation, language, darkMode }) => {
     const formattedDate = getLocalDateString(today); 
     const isDateAlreadyAdded = history.some(entry => entry.date === formattedDate);
     
-    // الحصول على المستخدم الحالي
     const { data: { user } } = await supabase.auth.getUser();
 
     if (isDateAlreadyAdded) {
@@ -218,13 +197,11 @@ const WeightTracker = ({ navigation, language, darkMode }) => {
         { 
           text: t('update'), 
           onPress: async () => {
-            // أ. تحديث محلي (عشان السرعة)
             const updatedHistory = history.map(entry => entry.date === formattedDate ? { ...entry, weight: weightValue } : entry);
             setHistory(updatedHistory); 
             setModalVisible(false); 
             setNewWeight('');
 
-            // ب. تحديث في Supabase (لو المستخدم مسجل)
             if (user) {
                 const { error } = await supabase
                     .from('weights')
@@ -239,15 +216,12 @@ const WeightTracker = ({ navigation, language, darkMode }) => {
       return;
     }
 
-    // إضافة جديد
-    // أ. تحديث محلي
     const newEntry = { date: formattedDate, weight: weightValue }; 
     const updatedHistory = [...history, newEntry].sort((a, b) => new Date(b.date) - new Date(a.date));
     setHistory(updatedHistory); 
     setModalVisible(false); 
     setNewWeight('');
 
-    // ب. إضافة في Supabase (لو المستخدم مسجل)
     if (user) {
         const { error } = await supabase
             .from('weights')
@@ -265,7 +239,6 @@ const WeightTracker = ({ navigation, language, darkMode }) => {
   };
 
   const renderWeightTrackerScreen = () => {
-    // ... (باقي الكود زي ما هو بالظبط بدون أي تغيير في الـ UI)
     const isRTL = language === 'ar';
     const t = (key) => translations[language][key] || key;
     const styles = createStyles(darkMode, isRTL);
@@ -305,7 +278,16 @@ const WeightTracker = ({ navigation, language, darkMode }) => {
     const chartData = { labels: chartHistory.map(entry => `${new Date(entry.date).getDate()}/${new Date(entry.date).getMonth() + 1}`), datasets: [{ data: chartHistory.map(entry => entry.weight), color: (opacity = 1) => `rgba(76, 175, 80, ${opacity})`, strokeWidth: 2, }], };
     const getChartConfig = (isDark) => ({ backgroundColor: isDark ? '#1e1e1e' : '#ffffff', backgroundGradientFrom: isDark ? '#1e1e1e' : '#ffffff', backgroundGradientTo: isDark ? '#1e1e1e' : '#ffffff', decimalPlaces: 1, color: (opacity = 1) => isDark ? `rgba(230, 230, 230, ${opacity})` : `rgba(0, 0, 0, ${opacity})`, labelColor: (opacity = 1) => isDark ? `rgba(200, 200, 200, ${opacity})` : `rgba(100, 100, 100, ${opacity})`, style: { borderRadius: 16 }, propsForDots: { r: '6', strokeWidth: '2', stroke: '#4CAF50' }, });
     const chartConfig = getChartConfig(darkMode);
-    const dynamicStyles = { textAlign: { textAlign: isRTL ? 'right' : 'left' }, row: { flexDirection: isRTL ? 'row-reverse' : 'row' }, rtlText: { writingDirection: isRTL ? 'rtl' : 'ltr' } };
+
+    // ============================================
+    // تعديل اتجاهات النصوص والصفوف (عكس الطبيعي)
+    // العربي = يسار (Left) | الإنجليزي = يمين (Right)
+    // ============================================
+    const dynamicStyles = { 
+        textAlign: { textAlign: isRTL ? 'left' : 'right' }, 
+        row: { flexDirection: isRTL ? 'row' : 'row-reverse' }, 
+        rtlText: { writingDirection: isRTL ? 'ltr' : 'rtl' } 
+    };
     
     let tooltipStyle = {}; 
     if (tooltip) { 
@@ -330,6 +312,7 @@ const WeightTracker = ({ navigation, language, darkMode }) => {
         <TouchableOpacity activeOpacity={1} onPress={hideTooltip}>
           <View style={styles.card}>
             <Text style={[styles.cardTitle, dynamicStyles.textAlign, dynamicStyles.rtlText]}>{t('currentStatus')}</Text>
+            {/* تم عكس اتجاه الصف في dynamicStyles */}
             <View style={[styles.currentWeightContainer, dynamicStyles.row]}>
               <Text style={styles.currentWeight}>{currentEntry.weight.toFixed(1)} {t('kg')}</Text>
               <View style={[styles.changeBadge, { backgroundColor: totalChange <= 0 ? '#4CAF50' : '#F44336' }]}>
@@ -338,6 +321,7 @@ const WeightTracker = ({ navigation, language, darkMode }) => {
               </View>
             </View>
             <Text style={[styles.lastUpdatedText, dynamicStyles.textAlign, dynamicStyles.rtlText]}>{t('lastUpdate')} {formatDisplayDate(currentEntry.date, language)}</Text>
+            
             <View style={[styles.statsRow, dynamicStyles.row]}>
               <View style={styles.statItem}><Text style={styles.statLabel}>{t('starting')}</Text><Text style={styles.statValue}>{startingEntry.weight.toFixed(1)} {t('kg')}</Text></View>
               <View style={styles.statItem}><Text style={styles.statLabel}>{t('goal')}</Text><Text style={styles.statValue}>{goalWeight.toFixed(1)} {t('kg')}</Text></View>
@@ -424,7 +408,6 @@ const WeightTracker = ({ navigation, language, darkMode }) => {
     );
   };
     
-  // ... (نفس دوال التنقل وباقي الكود)
   const handleNavigationRequest = (screenName, params = {}) => {
       const activityScreens = ['steps', 'distance', 'calories', 'activeTime'];
       if (activityScreens.includes(screenName)) {
@@ -506,6 +489,10 @@ const WeightTracker = ({ navigation, language, darkMode }) => {
       const greenBackgroundScreens = ['food', 'water', 'steps', 'reports', 'distance', 'calories', 'activeTime'];
       const safeAreaStyle = [ styles.safeArea, greenBackgroundScreens.includes(currentScreen) && { backgroundColor: darkMode ? '#141914' : '#f0f8f0' } ];
 
+      // أيضاً نعكس اتجاه المودال
+      const modalTextAlign = isRTL ? 'left' : 'right';
+      const modalDirection = isRTL ? 'row' : 'row-reverse';
+
       return (
           <SafeAreaView style={safeAreaStyle}>
               <View style={styles.mainContainer}>
@@ -519,6 +506,7 @@ const WeightTracker = ({ navigation, language, darkMode }) => {
                   <View style={styles.bottomFloatingLayer} pointerEvents="box-none">
                       
                       {currentScreen === 'weight' && (
+                          // عكس مكان الزر العائم أيضاً: عربي(يسار الشاشة) - انجليزي(يمين الشاشة)
                           <TouchableOpacity 
                               style={[styles.fab, isRTL ? { left: 20 } : { right: 20 }, { bottom: 40 + insets.bottom }]} 
                               onPress={() => setModalVisible(true)}
@@ -537,9 +525,9 @@ const WeightTracker = ({ navigation, language, darkMode }) => {
               <Modal animationType="fade" transparent={true} visible={modalVisible} onRequestClose={() => setModalVisible(false)}>
                   <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.modalCenteredView}>
                       <View style={styles.modalView}>
-                          <Text style={[styles.modalTitle, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('logYourWeight')}</Text>
-                          <TextInput style={[styles.input, { textAlign: isRTL ? 'right' : 'left' }]} onChangeText={setNewWeight} value={newWeight} placeholder={t('weightPlaceholder')} keyboardType="decimal-pad" autoFocus={true} placeholderTextColor={darkMode ? '#999' : '#ccc'} />
-                          <View style={[styles.modalButtons, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                          <Text style={[styles.modalTitle, { writingDirection: isRTL ? 'ltr' : 'rtl' }]}>{t('logYourWeight')}</Text>
+                          <TextInput style={[styles.input, { textAlign: modalTextAlign }]} onChangeText={setNewWeight} value={newWeight} placeholder={t('weightPlaceholder')} keyboardType="decimal-pad" autoFocus={true} placeholderTextColor={darkMode ? '#999' : '#ccc'} />
+                          <View style={[styles.modalButtons, { flexDirection: modalDirection }]}>
                               <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={() => setModalVisible(false)}><Text style={styles.buttonText}>{t('cancel')}</Text></TouchableOpacity>
                               <TouchableOpacity style={[styles.button, styles.saveButton]} onPress={handleAddWeight}><Text style={styles.buttonText}>{t('save')}</Text></TouchableOpacity>
                           </View>
@@ -621,7 +609,12 @@ const createStyles = (isDark, isRTL) => StyleSheet.create({
     
     header: { alignItems: 'center', justifyContent: 'center', marginBottom: 16, position: 'relative' },
     screenTitle: { textAlign: 'center', fontSize: 28, fontWeight: 'bold', color: isDark ? '#e0e0e0' : '#2c3e50' },
-    headerIcon: { position: 'absolute', [isRTL ? 'left' : 'right']: 0, padding: 5, },
+    // ============================================
+    // تعديل مكان الأيقونة (الهيدر):
+    // إذا عربي (isRTL) -> الأيقونة يمين (right)
+    // إذا إنجليزي -> الأيقونة يسار (left)
+    // ============================================
+    headerIcon: { position: 'absolute', [isRTL ? 'right' : 'left']: 0, padding: 5, },
     loadingText: { fontSize: 16, color: isDark ? '#aaa' : '#555', textAlign: 'center', lineHeight: 24, marginBottom: 8 },
     card: { backgroundColor: isDark ? '#1e1e1e' : '#fff', borderRadius: 16, padding: 20, marginBottom: 16, elevation: 3, shadowColor: isDark ? '#000' : '#555', shadowOffset: { width: 0, height: 2 }, shadowOpacity: isDark ? 0.7 : 0.1, shadowRadius: 4 },
     cardTitle: { fontSize: 18, fontWeight: '600', color: isDark ? '#f0f0f0' : '#34495e', marginBottom: 15 },

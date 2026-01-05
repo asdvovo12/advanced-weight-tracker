@@ -21,7 +21,6 @@ const CIRCLE_BORDER_WIDTH = 15;
 const ICON_SIZE = 22; // حجم النقطة المتحركة
 const RUNNER_ICON_SIZE = 75;
 const SVG_VIEWBOX_SIZE = CIRCLE_SIZE;
-// نصف القطر الحقيقي للمسار (يضمن أن يكون الخط والنقطة في نفس المركز)
 const PATH_RADIUS = (CIRCLE_SIZE / 2) - (CIRCLE_BORDER_WIDTH / 2);
 const CENTER_X = SVG_VIEWBOX_SIZE / 2;
 const CENTER_Y = SVG_VIEWBOX_SIZE / 2;
@@ -58,13 +57,18 @@ const _BASE_RUNNER_ICON_SIZE = 55;
 const _BASE_STEPS_COUNT_MARGIN_TOP = -5;
 
 const translations = {
-    ar: { headerTitle: 'الخطوات', today: 'اليوم', week: 'أسبوع', month: 'شهر', stepsTodayLabel: 'اليوم', yesterdayLabel: 'أمس', stepsLabelUnit: 'خطوة', goalLabelPrefix: 'الهدف:', durationUnit: 'ساعة', caloriesUnit: 'كالوري', distanceUnit: 'كم', challengePrefix: 'أيام تحدي', challengeCompleted: 'اكتمل التحدي!', challengeRemainingSingular: 'يوم متبقي', challengeRemainingPlural: 'أيام متبقية', challengeDaySuffix: 'ي', editGoal: 'تعديل الهدف', resetTodaySteps: 'إعادة تعيين خطوات اليوم', addTestSteps: 'اختبار إضافة خطوات (+٥٠٠)', setTargetStepsTitle: 'تحديد عدد الخطوات المستهدفة', save: 'حفظ', cancel: 'إلغاء', resetConfirmationTitle: "إعادة تعيين خطوات اليوم", resetConfirmationMessage: "هل أنت متأكد؟ لا يمكن التراجع.", errorTitle: "خطأ", cannotNavigateError: "لا يمكن الانتقال.", cannotSaveGoalError: "لم نتمكن من حفظ الهدف.", dayNamesShort: ['س', 'أ', 'ن', 'ث', 'ر', 'خ', 'ج'], loadingError: "خطأ في تحميل البيانات", activeTimeUnavailable: "غير متوفر", activeTimeMostlyMorning: "غالباً صباحاً", activeTimeMostlyEvening: "غالباً مساءً", activeTimeScattered: "متفرق", activeTimeNoSignificant: "لا يوجد نشاط بارز", trendStartActive: "بداية نشطة!", trendNoData: "لا يوجد بيانات للمقارنة", trendMoreActive: "نشاط زائد هذا الأسبوع", trendLessActive: "أقل نشاطاً من المعتاد", trendUsualActivity: "مستوى نشاط معتاد", menuMoreButton: "المزيد", pedometerChecking: "يتم التحقق...", pedometerNotAvailable: " عداد الخطى غير متوفر", pedometerPermissionDenied: "لم يتم منح الإذن لعداد الخطى", pedometerError: "خطأ في عداد الخطى", yes: "نعم", no: "لا", average: 'المتوسط', total: 'الإجمالي', vsLast7Days: 'مقارنة بآخر ٧ أيام', vsLast30Days: 'مقارنة بآخر ٣٠ يومًا', trendsLabel: 'الاتجاهات', mostActiveTimeLabel: 'وقت النشاط الأعلى', trendExtraActive: 'نشاط إضافي', minutesUnit: 'دقيقة', timeAM: 'ص', timePM: 'م', distanceDetails: 'المسافة', caloriesDetails: 'السعرات', activeTimeDetails: 'الوقت النشط', weeklySummary: 'ملخص الأسبوع'},
-    en: { headerTitle: 'Steps', today: 'Today', week: 'Week', month: 'Month', stepsTodayLabel: 'Today', yesterdayLabel: 'Yesterday', stepsLabelUnit: 'steps', goalLabelPrefix: 'Goal:', durationUnit: 'Hour', caloriesUnit: 'Kcal', distanceUnit: 'Km', challengePrefix: 'Day Challenge', challengeCompleted: 'Challenge Completed!', challengeRemainingSingular: 'day remaining', challengeRemainingPlural: 'days remaining', challengeDaySuffix: 'd', editGoal: 'Edit Goal', resetTodaySteps: 'Reset Today\'s Steps', addTestSteps: 'Test Add Steps (+500)', setTargetStepsTitle: 'Set Target Steps', save: 'Save', cancel: 'Cancel', resetConfirmationTitle: "Reset Today's Steps", resetConfirmationMessage: "Are you sure? This cannot be undone.", errorTitle: "Error", cannotNavigateError: "Cannot navigate.", cannotSaveGoalError: "Could not save goal.", dayNamesShort: ['S', 'M', 'T', 'W', 'T', 'F', 'S'], loadingError: "Error loading data", activeTimeUnavailable: "Unavailable", activeTimeMostlyMorning: "Mostly Morning", activeTimeMostlyEvening: "Mostly Evening", activeTimeScattered: "Scattered", activeTimeNoSignificant: "No significant activity", trendStartActive: "Active start!", trendNoData: "No data to compare", trendMoreActive: "More active this week", trendLessActive: "Less active than usual", trendUsualActivity: "Usual activity level", menuMoreButton: "More", pedometerChecking: "Checking...", pedometerNotAvailable: "Pedometer not available", pedometerPermissionDenied: "Pedometer permission denied", pedometerError: "Pedometer error", yes: "Yes", no: "No", average: 'Average', total: 'Total', vsLast7Days: 'vs. Last 7 Days', vsLast30Days: 'vs. Last 30 Days', trendsLabel: 'Trends', mostActiveTimeLabel: 'Most Active Time', trendExtraActive: 'Extra active', minutesUnit: 'min', timeAM: 'AM', timePM: 'PM', distanceDetails: 'Distance', caloriesDetails: 'Calories', activeTimeDetails: 'Active Time', weeklySummary: 'Weekly Summary'}
+    ar: { 
+        headerTitle: 'الخطوات', today: 'اليوم', week: 'أسبوع', month: 'شهر', stepsTodayLabel: 'اليوم', yesterdayLabel: 'أمس', stepsLabelUnit: 'خطوة', goalLabelPrefix: 'الهدف:', durationUnit: 'ساعة', caloriesUnit: 'كالوري', distanceUnit: 'كم', challengePrefix: 'أيام تحدي', challengeCompleted: 'اكتمل التحدي!', challengeRemainingSingular: 'يوم متبقي', challengeRemainingPlural: 'أيام متبقية', challengeDaySuffix: 'ي', editGoal: 'تعديل الهدف', resetTodaySteps: 'إعادة تعيين خطوات اليوم', addTestSteps: 'اختبار إضافة خطوات (+٥٠٠)', setTargetStepsTitle: 'تحديد عدد الخطوات المستهدفة', save: 'حفظ', cancel: 'إلغاء', resetConfirmationTitle: "إعادة تعيين خطوات اليوم", resetConfirmationMessage: "هل أنت متأكد؟ لا يمكن التراجع.", errorTitle: "خطأ", cannotNavigateError: "لا يمكن الانتقال.", cannotSaveGoalError: "لم نتمكن من حفظ الهدف.", dayNamesShort: ['س', 'أ', 'ن', 'ث', 'ر', 'خ', 'ج'], loadingError: "خطأ في تحميل البيانات", activeTimeUnavailable: "غير متوفر", activeTimeMostlyMorning: "غالباً صباحاً", activeTimeMostlyEvening: "غالباً مساءً", activeTimeScattered: "متفرق", activeTimeNoSignificant: "لا يوجد نشاط بارز", trendStartActive: "بداية نشطة!", trendNoData: "لا يوجد بيانات للمقارنة", trendMoreActive: "نشاط زائد هذا الأسبوع", trendLessActive: "أقل نشاطاً من المعتاد", trendUsualActivity: "مستوى نشاط معتاد", menuMoreButton: "المزيد", pedometerChecking: "يتم التحقق...", pedometerNotAvailable: " عداد الخطى غير متوفر", pedometerPermissionDenied: "لم يتم منح الإذن لعداد الخطى", pedometerError: "خطأ في عداد الخطى", yes: "نعم", no: "لا", average: 'المتوسط', total: 'الإجمالي', vsLast7Days: 'مقارنة بآخر ٧ أيام', vsLast30Days: 'مقارنة بآخر ٣٠ يومًا', trendsLabel: 'الاتجاهات', mostActiveTimeLabel: 'وقت النشاط الأعلى', trendExtraActive: 'نشاط إضافي', minutesUnit: 'دقيقة', timeAM: 'ص', timePM: 'م', distanceDetails: 'المسافة', caloriesDetails: 'السعرات', activeTimeDetails: 'الوقت النشط', weeklySummary: 'ملخص الأسبوع',
+        weeklyChartTitle: 'إحصائيات الأسبوع'
+    },
+    en: { 
+        headerTitle: 'Steps', today: 'Today', week: 'Week', month: 'Month', stepsTodayLabel: 'Today', yesterdayLabel: 'Yesterday', stepsLabelUnit: 'steps', goalLabelPrefix: 'Goal:', durationUnit: 'Hour', caloriesUnit: 'Kcal', distanceUnit: 'Km', challengePrefix: 'Day Challenge', challengeCompleted: 'Challenge Completed!', challengeRemainingSingular: 'day remaining', challengeRemainingPlural: 'days remaining', challengeDaySuffix: 'd', editGoal: 'Edit Goal', resetTodaySteps: 'Reset Today\'s Steps', addTestSteps: 'Test Add Steps (+500)', setTargetStepsTitle: 'Set Target Steps', save: 'Save', cancel: 'Cancel', resetConfirmationTitle: "Reset Today's Steps", resetConfirmationMessage: "Are you sure? This cannot be undone.", errorTitle: "Error", cannotNavigateError: "Cannot navigate.", cannotSaveGoalError: "Could not save goal.", dayNamesShort: ['S', 'M', 'T', 'W', 'T', 'F', 'S'], loadingError: "Error loading data", activeTimeUnavailable: "Unavailable", activeTimeMostlyMorning: "Mostly Morning", activeTimeMostlyEvening: "Mostly Evening", activeTimeScattered: "Scattered", activeTimeNoSignificant: "No significant activity", trendStartActive: "Active start!", trendNoData: "No data to compare", trendMoreActive: "More active this week", trendLessActive: "Less active than usual", trendUsualActivity: "Usual activity level", menuMoreButton: "More", pedometerChecking: "Checking...", pedometerNotAvailable: "Pedometer not available", pedometerPermissionDenied: "Pedometer permission denied", pedometerError: "Pedometer error", yes: "Yes", no: "No", average: 'Average', total: 'Total', vsLast7Days: 'vs. Last 7 Days', vsLast30Days: 'vs. Last 30 Days', trendsLabel: 'Trends', mostActiveTimeLabel: 'Most Active Time', trendExtraActive: 'Extra active', minutesUnit: 'min', timeAM: 'AM', timePM: 'PM', distanceDetails: 'Distance', caloriesDetails: 'Calories', activeTimeDetails: 'Active Time', weeklySummary: 'Weekly Summary',
+        weeklyChartTitle: 'Weekly Statistics'
+    }
 };
 
 // --- دوال الرسم والحساب الهندسي ---
 
-// رسم القوس الأخضر
 const describeArc = (x, y, radius, startAngleDeg, endAngleDeg) => { 
     const clampedEndAngle = Math.min(endAngleDeg, 359.999); 
     const startAngleRad = ((startAngleDeg - 90) * Math.PI) / 180.0; 
@@ -79,37 +83,16 @@ const describeArc = (x, y, radius, startAngleDeg, endAngleDeg) => {
     return d; 
 };
 
-// **حساب موقع النقطة بدقة هندسية**
-// هذا يضمن أن النقطة تتحرك على محيط الدائرة دون تشويه شكلها
 const calculateIconPositionOnPath = (angleDegrees) => { 
-    // تحويل الدرجة لراديان
     const angleRad = (angleDegrees * Math.PI) / 180; 
-
     const iconRadius = PATH_RADIUS; 
-
-    // التعديل هنا (عكس عقارب الساعة - شمال):
-    // 1. حطينا سالب (-) قبل الـ Math.sin عشان الـ X يروح ناحية الشمال
     const xOffset = -iconRadius * Math.sin(angleRad); 
-    
-    // 2. زي ما هي (-Math.cos) عشان تبدأ من فوق
     const yOffset = -iconRadius * Math.cos(angleRad); 
-
     const iconCenterX = CENTER_X + xOffset; 
     const iconCenterY = CENTER_Y + yOffset; 
-
     const top = iconCenterY - (ICON_SIZE / 2); 
     const left = iconCenterX - (ICON_SIZE / 2); 
-
-    return { 
-        position: 'absolute', 
-        width: ICON_SIZE, 
-        height: ICON_SIZE, 
-        top, 
-        left, 
-        zIndex: 10, 
-        justifyContent: 'center', 
-        alignItems: 'center' 
-    }; 
+    return { position: 'absolute', width: ICON_SIZE, height: ICON_SIZE, top, left, zIndex: 10, justifyContent: 'center', alignItems: 'center' }; 
 };
 
 
@@ -146,10 +129,14 @@ const StatItem = React.memo(({ type, value, unit, isDarkMode, styles }) => {
     );
 });
 
-const DailyStepsChart = React.memo(({ dailySteps = [], goalSteps = DEFAULT_GOAL, styles, language, dayNames }) => {
+const DailyStepsChart = React.memo(({ dailySteps = [], goalSteps = DEFAULT_GOAL, styles, language, dayNames, translation }) => {
     const [tooltipVisible, setTooltipVisible] = useState(false);
     const [selectedBarIndex, setSelectedBarIndex] = useState(null);
     const [selectedBarValue, setSelectedBarValue] = useState(null);
+    
+    const chartDirection = language === 'ar' ? 'row' : 'row-reverse';
+    const headerAlign = language === 'ar' ? 'flex-start' : 'flex-end';
+
     const yAxisLabelsToDisplay = useMemo(() => {
         const actualData = Array.isArray(dailySteps) ? dailySteps : [];
         const dataMax = Math.max(...actualData.map(s => s || 0), 0);
@@ -177,47 +164,70 @@ const DailyStepsChart = React.memo(({ dailySteps = [], goalSteps = DEFAULT_GOAL,
     const scale = BAR_CONTAINER_HEIGHT / scaleMaxValue;
     const handleBarPress = useCallback((displayIndex, value) => { const numericValue = value || 0; if (tooltipVisible && selectedBarIndex === displayIndex) { setTooltipVisible(false); setSelectedBarIndex(null); setSelectedBarValue(null); } else if (numericValue > 0) { setTooltipVisible(true); setSelectedBarIndex(displayIndex); setSelectedBarValue(numericValue); } else { setTooltipVisible(false); setSelectedBarIndex(null); setSelectedBarValue(null); } }, [tooltipVisible, selectedBarIndex]);
     const handleOutsidePress = useCallback(() => { if (tooltipVisible) { setTooltipVisible(false); setSelectedBarIndex(null); setSelectedBarValue(null); } }, [tooltipVisible]);
-    const displayTodayIndex = useMemo(() => { const localTodayJSDay = new Date().getDay(); if (language === 'ar') { return localTodayJSDay === 6 ? 0 : localTodayJSDay + 1; } return localTodayJSDay; }, [language]);
+    const displayTodayIndex = useMemo(() => {
+        const jsDay = new Date().getDay(); 
+        if (language === 'ar') {
+            switch (jsDay) {
+                case 6: return 6; 
+                case 0: return 5; 
+                case 1: return 4; 
+                case 2: return 3; 
+                case 3: return 2; 
+                case 4: return 1; 
+                case 5: return 0; 
+                default: return 0;
+            }
+        }
+        return jsDay;
+    }, [language]);
 
     return (
         <Pressable onPress={handleOutsidePress} style={styles.chartPressableArea}>
             <View style={styles.chartContainer}>
-                <View style={styles.yAxisContainer}>
-                    {yAxisLabelsToDisplay.slice().reverse().map((labelValue) => (
-                        <Text key={`y-${labelValue}`} style={styles.yAxisLabel}>{formatStepsK(labelValue, language)}</Text>
-                    ))}
+                <View style={[styles.chartHeaderContainer, { alignItems: headerAlign }]}>
+                    <Text style={styles.chartTitle}>{translation.weeklyChartTitle}</Text>
                 </View>
-                <View style={styles.mainChartArea}>
-                    <View style={styles.barsContainer}>
-                        {dayNames.map((_, displayIndex) => {
-                            const steps = (Array.isArray(dailySteps) && dailySteps.length === 7) ? (dailySteps[displayIndex] || 0) : 0;
-                            const barHeight = Math.min(BAR_CONTAINER_HEIGHT, Math.max(0, steps * scale));
-                            const isTodayLabel = displayIndex === displayTodayIndex;
-                            const achievedGoal = steps >= goalSteps;
-                            const isSelected = selectedBarIndex === displayIndex;
-                            return (
-                                <View key={`bar-${displayIndex}`} style={styles.barWrapper}>
-                                    <Pressable onPress={(e) => { e.stopPropagation(); handleBarPress(displayIndex, steps); }} hitSlop={5} disabled={steps <= 0}>
-                                        <View style={[styles.bar, { height: barHeight }, isTodayLabel ? (achievedGoal ? styles.barTodayAchieved : styles.barToday) : (achievedGoal ? styles.barAchievedGoal : styles.barDefault), isSelected && steps > 0 && styles.selectedBar]} />
-                                    </Pressable>
-                                    {tooltipVisible && isSelected && selectedBarValue !== null && (
-                                        <View style={[styles.tooltipPositioner, { bottom: barHeight + TOOLTIP_OFFSET }]}>
-                                            <View style={styles.tooltipBox}>
-                                                <Text style={styles.tooltipText}>{selectedBarValue.toLocaleString(language === 'ar' ? 'ar-EG' : 'en-US')}</Text>
-                                            </View>
-                                            <View style={styles.tooltipArrow} />
-                                        </View>
-                                    )}
-                                </View>
-                            );
-                        })}
-                    </View>
-                    <View style={styles.xAxisContainer}>
-                        {dayNames.map((day, displayIndex) => (
-                            <View key={`x-${displayIndex}`} style={styles.dayLabelWrapper}>
-                                <Text style={[styles.xAxisLabel, displayIndex === displayTodayIndex && styles.xAxisLabelToday]}>{day}</Text>
-                            </View>
+                <View style={[styles.chartInnerContent, { flexDirection: chartDirection }]}>
+                    <View style={styles.yAxisContainer}>
+                        {yAxisLabelsToDisplay.slice().reverse().map((labelValue) => (
+                            <Text key={`y-${labelValue}`} style={styles.yAxisLabel}>{formatStepsK(labelValue, language)}</Text>
                         ))}
+                    </View>
+                    <View style={styles.mainChartArea}>
+                        <View style={styles.barsContainer}>
+                            {dayNames.map((_, displayIndex) => {
+                                const steps = (Array.isArray(dailySteps) && dailySteps.length === 7) ? (dailySteps[displayIndex] || 0) : 0;
+                                const barHeight = Math.min(BAR_CONTAINER_HEIGHT, Math.max(0, steps * scale));
+                                const isTodayLabel = displayIndex === displayTodayIndex;
+                                const achievedGoal = steps >= goalSteps;
+                                const isSelected = selectedBarIndex === displayIndex;
+                                return (
+                                    <View key={`bar-${displayIndex}`} style={styles.barWrapper}>
+                                        <Pressable onPress={(e) => { e.stopPropagation(); handleBarPress(displayIndex, steps); }} hitSlop={5} disabled={steps <= 0}>
+                                            <View style={[styles.bar, { height: barHeight }, isTodayLabel ? (achievedGoal ? styles.barTodayAchieved : styles.barToday) : (achievedGoal ? styles.barAchievedGoal : styles.barDefault), isSelected && steps > 0 && styles.selectedBar]} />
+                                        </Pressable>
+                                        {tooltipVisible && isSelected && selectedBarValue !== null && (
+                                            <View style={[styles.tooltipPositioner, { bottom: barHeight + TOOLTIP_OFFSET }]}>
+                                                <View style={styles.tooltipBox}>
+                                                    <Text style={styles.tooltipText}>{selectedBarValue.toLocaleString(language === 'ar' ? 'ar-EG' : 'en-US')}</Text>
+                                                </View>
+                                                <View style={styles.tooltipArrow} />
+                                            </View>
+                                        )}
+                                    </View>
+                                );
+                            })}
+                        </View>
+                        <View style={styles.xAxisContainer}>
+                            {dayNames.map((day, displayIndex) => (
+                                <View key={`x-${displayIndex}`} style={styles.dayLabelWrapper}>
+                                    <Text style={[
+                                        styles.xAxisLabel, 
+                                        displayIndex === displayTodayIndex && styles.xAxisLabelToday
+                                    ]}>{day}</Text>
+                                </View>
+                            ))}
+                        </View>
                     </View>
                 </View>
             </View>
@@ -269,7 +279,6 @@ const StepsScreen = (props) => {
     const [isCurrentWeekSelected, setIsCurrentWeekSelected] = useState(true);
     const [dailyChartData, setDailyChartData] = useState(Array(7).fill(0));
     
-    // قيمة الحركة للأنيميشن
     const animatedAngle = useRef(new Animated.Value(0)).current;
     
     const animationFrameRef = useRef(null);
@@ -288,6 +297,8 @@ const StepsScreen = (props) => {
     useEffect(() => { displayStepsRef.current = displaySteps; }, [displaySteps]);
     useEffect(() => { goalStepsRef.current = goalSteps; }, [goalSteps]);
     useEffect(() => { setSelectedWeekStart(getStartOfWeek(new Date(), startOfWeekDay)); }, [startOfWeekDay]);
+
+    const getStoredStepsHistory = useCallback(async () => { try { const storedHistory = await AsyncStorage.getItem(DAILY_STEPS_HISTORY_KEY); if (storedHistory) { try { const history = JSON.parse(storedHistory); if (typeof history === 'object' && history !== null) { Object.keys(history).forEach(key => { if (typeof history[key] !== 'number' || isNaN(history[key])) { console.warn(`Invalid step count for ${key}, set 0.`); history[key] = 0; } }); return history; } else return {}; } catch (e) { console.error("Parse history retrieval fail:", e); return {}; } } return {}; } catch (error) { console.error("Get history fail:", error); return {}; } }, []);
 
     const saveDailySteps = useCallback(async (date, steps) => { 
         const dateString = getDateString(date); 
@@ -314,7 +325,32 @@ const StepsScreen = (props) => {
         } catch (error) { console.error("Save daily steps fail:", error); } 
     }, []);
 
-    const getStoredStepsHistory = useCallback(async () => { try { const storedHistory = await AsyncStorage.getItem(DAILY_STEPS_HISTORY_KEY); if (storedHistory) { try { const history = JSON.parse(storedHistory); if (typeof history === 'object' && history !== null) { Object.keys(history).forEach(key => { if (typeof history[key] !== 'number' || isNaN(history[key])) { console.warn(`Invalid step count for ${key}, set 0.`); history[key] = 0; } }); return history; } else return {}; } catch (e) { console.error("Parse history retrieval fail:", e); return {}; } } return {}; } catch (error) { console.error("Get history fail:", error); return {}; } }, []);
+    // >>>>>>> تعديل هنا: الشارت دلوقتي بيعتمد على selectedDate عشان يعرض أسبوع التاريخ اللي أنت واقف عليه <<<<<<<<
+useEffect(() => {
+        const updateChartData = async () => {
+            const history = await getStoredStepsHistory();
+            const todayStr = getDateString(new Date());
+            history[todayStr] = currentSteps; 
+
+            // --- التعديل هنا ---
+            // شيل new Date() وحط بدالها selectedDate
+            // عشان يجيب أسبوع اليوم اللي أنت واقف عليه مش أسبوع النهاردة
+            const start = getStartOfWeek(selectedDate, startOfWeekDay);
+            
+            const arr = [];
+            for (let i = 0; i < 7; i++) {
+                const d = addDays(start, i);
+                const dStr = getDateString(d);
+                // هنا الكود بيقول لو ملقاش تاريخ مسجل حط صفر (ده اللي بيصفر الجدول)
+                arr.push(history[dStr] || 0);
+            }
+            setDailyChartData(arr);
+        };
+        updateChartData();
+        
+        // --- متنساش تضيف selectedDate هنا في الآخر ---
+    }, [currentSteps, startOfWeekDay, getStoredStepsHistory, selectedDate]);
+
 
     useEffect(() => { 
         const loadInitialData = async () => { 
@@ -353,15 +389,83 @@ const StepsScreen = (props) => {
         loadInitialData(); 
     }, [getStoredStepsHistory]);
 
+    const animateDisplaySteps = useCallback((startValue, endValue) => { 
+        if (startValue === endValue || isNaN(startValue) || isNaN(endValue)) { 
+            setDisplaySteps(endValue); 
+            isAnimatingSteps.current = false; 
+            return; 
+        } 
+        if (animationFrameRef.current) { 
+            cancelAnimationFrame(animationFrameRef.current); 
+            animationFrameRef.current = null; 
+        } 
+        isAnimatingSteps.current = true; 
+        const startTime = Date.now(); 
+        const step = () => { 
+            const now = Date.now(); 
+            const timePassed = now - startTime; 
+            const progress = Math.min(timePassed / STEP_ANIMATION_DURATION, 1); 
+            const currentDisplay = Math.round(startValue + (endValue - startValue) * progress); 
+            if (isAnimatingSteps.current) setDisplaySteps(currentDisplay); 
+            if (progress < 1 && isAnimatingSteps.current) animationFrameRef.current = requestAnimationFrame(step); 
+            else { 
+                if (isAnimatingSteps.current && progress >= 1) setDisplaySteps(endValue); 
+                animationFrameRef.current = null; 
+                isAnimatingSteps.current = false; 
+            } 
+        }; 
+        animationFrameRef.current = requestAnimationFrame(step); 
+    }, []);
+
+    useEffect(() => {
+        const updateDisplayForSelectedDate = async () => {
+            const dateString = getDateString(selectedDate); // تاريخ اليوم اللي انت واقف عليه كـ نص
+            const todayString = getDateString(new Date());  // تاريخ النهاردة الحقيقي كـ نص
+            
+            let stepsToShow = 0;
+
+            // 1. لو التاريخ اللي انت مختاره هو نفس تاريخ النهاردة (كنص)
+            if (dateString === todayString) {
+                stepsToShow = currentSteps; // اعرض الخطوات الحالية من العداد
+            } else {
+                // 2. لو تاريخ قديم، هات البيانات من الذاكرة
+                const history = await getStoredStepsHistory();
+                
+                // هنا التريك: لو لقينا خطوات للتاريخ ده اعرضها، لو ملقيناش اعرض 0
+                stepsToShow = history[dateString] || 0;
+            }
+
+            // تحديث الرقم والأنيميشن
+            setStepsForSelectedDay(stepsToShow);
+            animateDisplaySteps(displayStepsRef.current, stepsToShow);
+        };
+        
+        updateDisplayForSelectedDate();
+    }, [selectedDate, currentSteps, getStoredStepsHistory, animateDisplaySteps]);
+
     const progressPercentage = useMemo(() => goalSteps > 0 ? (stepsForSelectedDay / goalSteps) * 100 : 0, [stepsForSelectedDay, goalSteps]);
     const clampedProgress = useMemo(() => Math.min(100, Math.max(0, progressPercentage || 0)), [progressPercentage]);
     const targetAngle = useMemo(() => { if (stepsForSelectedDay <= 0 || goalSteps <= 0) return 0; const angle = clampedProgress * 3.6; return Math.min(359.999, Math.max(0.01, angle || 0)); }, [stepsForSelectedDay, goalSteps, clampedProgress]);
     
-    // حالة لتخزين ستايل النقطة ومسار الدائرة
     const [dynamicIconStyle, setDynamicIconStyle] = useState(() => calculateIconPositionOnPath(0));
     const [progressPathD, setProgressPathD] = useState('');
 
-    const { formattedDuration, formattedCalories, formattedDistance } = useMemo(() => { const steps = displaySteps; const totalMinutes = steps > 0 ? steps / STEPS_PER_MINUTE : 0; const hours = Math.floor(totalMinutes / 60); const minutes = Math.floor(totalMinutes % 60); const locale = language === 'ar' ? 'ar-EG' : 'en-US'; const duration = `${hours.toLocaleString(locale, { minimumIntegerDigits: 2 })}:${minutes.toLocaleString(locale, { minimumIntegerDigits: 2 })}`; const totalCalories = steps * CALORIES_PER_STEP; const calories = totalCalories.toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 }); const distanceMeters = steps * STEP_LENGTH_METERS; const distanceKm = distanceMeters / 1000; const distance = distanceKm.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); return { formattedDuration: duration, formattedCalories: calories, formattedDistance: distance }; }, [displaySteps, language]);
+    const { formattedDuration, formattedCalories, formattedDistance } = useMemo(() => { 
+        const steps = Math.min(stepsForSelectedDay, goalSteps); 
+        
+        const totalMinutes = steps > 0 ? steps / STEPS_PER_MINUTE : 0; 
+        const hours = Math.floor(totalMinutes / 60); 
+        const minutes = Math.floor(totalMinutes % 60); 
+        const locale = language === 'ar' ? 'ar-EG' : 'en-US'; 
+        const duration = `${hours.toLocaleString(locale, { minimumIntegerDigits: 2 })}:${minutes.toLocaleString(locale, { minimumIntegerDigits: 2 })}`; 
+        const totalCalories = steps * CALORIES_PER_STEP; 
+        const calories = totalCalories.toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 }); 
+        const distanceMeters = steps * STEP_LENGTH_METERS; 
+        const distanceKm = distanceMeters / 1000; 
+        const distance = distanceKm.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); 
+        return { formattedDuration: duration, formattedCalories: calories, formattedDistance: distance }; 
+    }, [stepsForSelectedDay, language, goalSteps]);
+
     const badgeProgressAngle = useMemo(() => { if (remainingDays <= 0 || currentChallengeDuration <= 0) return 359.999; if (remainingDays >= currentChallengeDuration) return 0; const daysCompleted = currentChallengeDuration - remainingDays; const angle = (daysCompleted / currentChallengeDuration) * 360; return Math.min(359.999, Math.max(0.01, angle || 0)); }, [remainingDays, currentChallengeDuration]);
     const badgeProgressPathD = useMemo(() => (badgeProgressAngle > 0.1 ? describeArc(BADGE_CENTER_X, BADGE_CENTER_Y, BADGE_PATH_RADIUS, 0.01, badgeProgressAngle) : ''), [badgeProgressAngle]);
     const isCurrentWeekSelectedMemo = useMemo(() => isSameWeek(selectedWeekStart, new Date(), startOfWeekDay), [selectedWeekStart, startOfWeekDay]);
@@ -369,12 +473,11 @@ const StepsScreen = (props) => {
     const formattedWeekRange = useMemo(() => { const endDate = getEndOfWeek(selectedWeekStart, startOfWeekDay); return formatDateRange(selectedWeekStart, endDate, language); }, [selectedWeekStart, startOfWeekDay, language]);
     const weeklyStats = useMemo(() => { const calculateWeekMetrics = (weekDataArray) => { if (!Array.isArray(weekDataArray) || weekDataArray.length === 0) { return { total: 0, avg: 0, rawMinutes: 0, rawCals: 0, rawDist: 0, durationStr: language === 'ar' ? "٠٠:٠٠" : "00:00", calsStr: language === 'ar' ? "٠٫٠" : "0.0", distStr: language === 'ar' ? "٠٫٠٠" : "0.00" }; } const locale = language === 'ar' ? 'ar-EG' : 'en-US'; const validDaysData = weekDataArray.filter(s => typeof s === 'number' && s >= 0); const total = validDaysData.reduce((sum, steps) => sum + steps, 0); const daysWithData = validDaysData.length; const avg = daysWithData > 0 ? total / daysWithData : 0; const rawMinutes = total / STEPS_PER_MINUTE; const rawCals = total * CALORIES_PER_STEP; const rawDist = total * STEP_LENGTH_METERS / 1000; const hours = Math.floor(rawMinutes / 60); const mins = Math.floor(rawMinutes % 60); const durationStr = `${hours.toLocaleString(locale, { minimumIntegerDigits: 2 })}:${mins.toLocaleString(locale, { minimumIntegerDigits: 2 })}`; const calsStr = rawCals.toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 }); const distStr = rawDist.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); return { total, avg: Math.round(avg), rawMinutes, rawCals, rawDist, durationStr, calsStr, distStr }; }; const currentMetrics = calculateWeekMetrics(actualWeekData); const previousMetrics = calculateWeekMetrics(previousWeekForComparisonData); const locale = language === 'ar' ? 'ar-EG' : 'en-US'; const stepsDiff = currentMetrics.total - previousMetrics.total; const stepsChangeStr = `${stepsDiff >= 0 ? '+' : '−'}${Math.abs(stepsDiff).toLocaleString(locale)}`; return { totalSteps: currentMetrics.total, averageSteps: currentMetrics.avg, weeklyDuration: currentMetrics.durationStr, weeklyCalories: currentMetrics.calsStr, weeklyDistance: currentMetrics.distStr, stepsChange: stepsChangeStr, }; }, [actualWeekData, previousWeekForComparisonData, language]);
 
-    // --- تشغيل الأنيميشن ---
     useEffect(() => { 
         const animation = Animated.timing(animatedAngle, { 
             toValue: targetAngle, 
             duration: 800, 
-            useNativeDriver: false, // يجب أن يكون false لأننا نستخدمه لتحديث الخصائص الرسومية في JS
+            useNativeDriver: false, 
         }); 
         animation.start(({ finished }) => { 
             if (finished && stepsForSelectedDay >= goalStepsRef.current) { 
@@ -386,19 +489,14 @@ const StepsScreen = (props) => {
 
     useEffect(() => { if (stepsForSelectedDay < goalSteps) { setIsRunnerVisuallyStopped(false); } }, [stepsForSelectedDay, goalSteps]);
 
-    // --- الربط بين الخط الأخضر والنقطة ---
-    // هذا المستمع يضمن أن النقطة تتحرك بالتزامن التام مع رسم الخط
     useEffect(() => { 
         const listenerId = animatedAngle.addListener(({ value }) => { 
-            // 1. تحديث موقع النقطة
             setDynamicIconStyle(calculateIconPositionOnPath(value)); 
-            // 2. تحديث رسم الخط الأخضر
             setProgressPathD(value > 0.01 ? describeArc(CENTER_X, CENTER_Y, PATH_RADIUS, 0.01, value) : ''); 
         }); 
         return () => animatedAngle.removeListener(listenerId); 
     }, [animatedAngle]);
 
-    const animateDisplaySteps = useCallback((startValue, endValue) => { if (startValue === endValue || isNaN(startValue) || isNaN(endValue)) { setDisplaySteps(endValue); isAnimatingSteps.current = false; return; } if (animationFrameRef.current) { cancelAnimationFrame(animationFrameRef.current); animationFrameRef.current = null; } isAnimatingSteps.current = true; const startTime = Date.now(); const step = () => { const now = Date.now(); const timePassed = now - startTime; const progress = Math.min(timePassed / STEP_ANIMATION_DURATION, 1); const currentDisplay = Math.round(startValue + (endValue - startValue) * progress); if (isAnimatingSteps.current) setDisplaySteps(currentDisplay); if (progress < 1 && isAnimatingSteps.current) animationFrameRef.current = requestAnimationFrame(step); else { if (isAnimatingSteps.current && progress >= 1) setDisplaySteps(endValue); animationFrameRef.current = null; isAnimatingSteps.current = false; } }; animationFrameRef.current = requestAnimationFrame(step); }, []);
     
     useEffect(() => { let isMounted = true; let initialLoad = true; const subscribe = async () => { try { const available = await Pedometer.isAvailableAsync(); if (!isMounted) return; setIsPedometerAvailable(String(available)); if (available) { const { status } = await Pedometer.requestPermissionsAsync(); if (!isMounted) return; if (status === 'granted') { const end = new Date(); const start = new Date(); start.setHours(0, 0, 0, 0); try { const pastStepCountResult = await Pedometer.getStepCountAsync(start, end); if (isMounted && pastStepCountResult) { const initialSteps = pastStepCountResult.steps || 0; setCurrentSteps(initialSteps); if (initialLoad) { await saveDailySteps(new Date(), initialSteps); initialLoad = false; } } } catch (error) { if (isMounted) { console.error("Pedometer getStepCountAsync error:", error); } } pedometerSubscription.current = Pedometer.watchStepCount(result => { if (!isMounted) return; const fetchTodaysSteps = async () => { const endOfDay = new Date(); const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0); try { const stepCount = await Pedometer.getStepCountAsync(startOfDay, endOfDay); if (isMounted && stepCount) { const newTotalStepsToday = stepCount.steps || 0; setCurrentSteps(prevActualSteps => { if (newTotalStepsToday !== prevActualSteps) { saveDailySteps(new Date(), newTotalStepsToday); if (newTotalStepsToday > prevActualSteps) { setIsStepping(true); if (stopSteppingTimer.current) clearTimeout(stopSteppingTimer.current); stopSteppingTimer.current = setTimeout(() => { if (isMounted) setIsStepping(false); }, RUNNER_STOP_DELAY); } } return newTotalStepsToday; }); } } catch (err) { if (isMounted) console.error("Error fetching step count in watch:", err); } }; fetchTodaysSteps(); }); } else { if (isMounted) { console.warn("Pedometer permission not granted."); setIsPedometerAvailable('permission_denied'); } } } else { if (isMounted) { console.warn("Pedometer not available."); setIsPedometerAvailable('not_available'); } } } catch (error) { if (isMounted) { console.error("Pedometer setup error:", error); setIsPedometerAvailable('error'); } } }; if(!isLoading) { subscribe(); } return () => { isMounted = false; if (pedometerSubscription.current) { pedometerSubscription.current.remove(); pedometerSubscription.current = null; } if (animationFrameRef.current) { cancelAnimationFrame(animationFrameRef.current); animationFrameRef.current = null; isAnimatingSteps.current = false; } if(stopSteppingTimer.current) clearTimeout(stopSteppingTimer.current); setIsStepping(false); }; }, [saveDailySteps, animateDisplaySteps, isLoading]);
 
@@ -436,9 +534,17 @@ const StepsScreen = (props) => {
     const navigateToAchievements = useCallback(() => { if (onNavigateToAchievements && typeof onNavigateToAchievements === 'function') { onNavigateToAchievements(currentSteps); } else { Alert.alert(translation.errorTitle, translation.cannotNavigateError); } }, [onNavigateToAchievements, currentSteps, translation]);
     
     const runnerImageSource = (isStepping && isViewingToday && !isRunnerVisuallyStopped) ? require('./assets/walking.gif') : require('./assets/walking.png');
-    const chartDayNamesForDayTab = useMemo(() => { return language === 'ar' ? ['س', 'خ', 'ر', 'ث', 'ن', 'أ', 'ج'].reverse() : ['S', 'M', 'T', 'W', 'T', 'F', 'S']; }, [language]);
+    const chartDayNamesForDayTab = useMemo(() => { return language === 'ar' ? ['س', 'خ', 'ر', 'ث', 'ن', 'أ', 'س']  : ['S', 'M', 'T', 'W', 'T', 'F', 'S']; }, [language]);
     const dayLabel = useMemo(() => formatDisplayDate(selectedDate, language, translation), [selectedDate, language, translation]);
-    const dailyChartDataForDisplay = useMemo(() => { if (!Array.isArray(dailyChartData)) return []; return dailyChartData.map(steps => Math.min(steps || 0, goalSteps)); }, [dailyChartData, goalSteps]);
+    
+    const dailyChartDataForDisplay = useMemo(() => { 
+        if (!Array.isArray(dailyChartData)) return []; 
+        const data = dailyChartData.map(steps => steps || 0);
+        if (language === 'ar') {
+            return data.reverse();
+        }
+        return data; 
+    }, [dailyChartData, language]);
 
     return (
         <SafeAreaView style={currentStyles.safeArea}>
@@ -453,7 +559,6 @@ const StepsScreen = (props) => {
              </View>
              
              <View style={currentStyles.periodSelectorContainer}>
-                 {/* ... (أزرار اختيار الفترة الزمنية كما هي) ... */}
                  {language === 'ar' ? (
                      <>
                          <TouchableOpacity style={[ currentStyles.periodButton, selectedPeriod === 'month' ? currentStyles.periodButtonSelected : currentStyles.periodButtonInactive ]} onPress={() => setSelectedPeriod('month')}>
@@ -506,7 +611,9 @@ const StepsScreen = (props) => {
                                     </Svg>
                                     <View style={currentStyles.circleContentOverlay}>
                                         <Image key={runnerImageSource} source={runnerImageSource} style={currentStyles.runnerImageStyle} />
-                                        <Text style={currentStyles.stepsCount}>{displaySteps.toLocaleString(language === 'ar' ? 'ar-EG' : 'en-US')}</Text>
+                                        <Text style={currentStyles.stepsCount}>
+                                            {Math.min(displaySteps, goalSteps).toLocaleString(language === 'ar' ? 'ar-EG' : 'en-US')}
+                                        </Text>
                                         <Text style={currentStyles.stepsLabel}>{translation.stepsLabelUnit}</Text>
                                         <TouchableOpacity onPress={openGoalModal} style={currentStyles.goalContainerTouchable} activeOpacity={0.7}>
                                             <View style={currentStyles.goalContainer}>
@@ -515,7 +622,6 @@ const StepsScreen = (props) => {
                                             </View>
                                         </TouchableOpacity>
                                     </View>
-                                    {/* النقطة المتحركة */}
                                     {clampedProgress < 100 && (
                                         <Animated.View style={dynamicIconStyle}>
                                             <View style={[currentStyles.movingDot, {borderColor: currentStyles.safeArea.backgroundColor}]} />
@@ -547,14 +653,14 @@ const StepsScreen = (props) => {
                                <Ionicons name={I18nManager.isRTL ? "chevron-forward" : "chevron-back"} size={24} color={currentStyles.summaryChevron.color} />
                             </View>
                         </TouchableOpacity>
-                        <DailyStepsChart dailySteps={dailyChartDataForDisplay} goalSteps={goalSteps} styles={currentStyles} language={language} dayNames={chartDayNamesForDayTab} />
+                        
+                        <DailyStepsChart dailySteps={dailyChartDataForDisplay} goalSteps={goalSteps} styles={currentStyles} language={language} dayNames={chartDayNamesForDayTab} translation={translation} />
                      </>
                  )}
                  {selectedPeriod === 'week' && ( <WeeklySteps totalSteps={weeklyStats.totalSteps} averageSteps={weeklyStats.averageSteps} weeklyDuration={weeklyStats.weeklyDuration} weeklyDistance={weeklyStats.weeklyDistance} weeklyCalories={weeklyStats.weeklyCalories} stepsChange={weeklyStats.stepsChange} weekData={actualWeekData} previousWeekData={previousWeekForComparisonData} weekStartDate={selectedWeekStart} formattedDateRange={formattedWeekRange} onPreviousWeek={handlePreviousWeek} onNextWeek={handleNextWeek} isCurrentWeek={isCurrentWeekSelected} targetSteps={goalSteps} isLoading={isWeeklyLoading} maxSteps={Math.max(...(actualWeekData || []).map(s => s || 0), goalSteps, 1000) * 1.15} language={language} isDarkMode={isDarkMode} translation={translation} dayNamesShort={chartDayNamesForDayTab} /> )}
                  {selectedPeriod === 'month' && ( <MonthlySteps key={selectedMonthStart.toISOString()} monthlyData={currentMonthData} previousMonthData={previousMonthDataForComparison} isLoading={isMonthlyLoading} formattedDateRange={formattedMonthRange} monthStartDate={selectedMonthStart} onPreviousMonth={handlePreviousMonth} onNextMonth={handleNextMonth} isCurrentMonth={isCurrentMonthSelected} language={language} isDarkMode={isDarkMode} translation={translation} targetSteps={goalSteps} /> )}
              </ScrollView>
              
-             {/* ... Modals (Goal, Menu, TitleMenu) كما هي في الكود الأصلي ... */}
              <Modal visible={isGoalModalVisible} transparent={true} animationType="fade" onRequestClose={handleCancelGoal} >
                 <Pressable style={currentStyles.modalOverlay} onPress={handleCancelGoal}>
                     <Pressable style={currentStyles.modalContent} onPress={(e) => e.stopPropagation()}>
@@ -615,7 +721,105 @@ const StepsScreen = (props) => {
     );
 };
 
-const lightStyles = StyleSheet.create({ safeArea: { flex: 1, backgroundColor: '#F7FDF9' }, scrollViewContent: { paddingBottom: 40, paddingHorizontal: 0, flexGrow: 1 }, topBar: { flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%', paddingVertical: 15, paddingHorizontal: 20 }, titleGroup: { flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row', alignItems: 'center' }, headerTitle: { fontSize: 22, fontWeight: 'bold', color: '#2e7d32' }, moreButton: { padding: 10 }, moreButtonIcon: { color: '#757575' }, moreButtonIconDisabled: { color: '#DCDCDC' }, periodSelectorContainer: { flexDirection: 'row-reverse', marginVertical: 10, backgroundColor: '#E8F5E9', borderRadius: 20, overflow: 'hidden', width: '85%', height: 40, alignSelf: 'center' }, periodButton: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 8 }, periodButtonInactive: { backgroundColor: 'transparent' }, periodButtonSelected: { backgroundColor: '#388e3c', borderRadius: 20 }, periodText: { fontSize: 16, fontWeight: 'bold' }, periodTextInactive: { color: '#388e3c' }, periodTextSelected: { color: '#ffffff' }, dayHeader: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', width: '65%', marginVertical: 15, alignSelf: 'center' }, dayHeaderText: { fontSize: 20, fontWeight: 'bold', color: '#2e7d32' }, dayHeaderArrow: { color: '#2e7d32' }, dayHeaderArrowDisabled: { color: '#a5d6a7' }, mainDisplayArea: { width: '100%', alignItems: 'center', marginVertical: 5, paddingBottom: 10, paddingHorizontal: 15 }, circle: { width: CIRCLE_SIZE, height: CIRCLE_SIZE, justifyContent: 'center', alignItems: 'center', position: 'relative' }, circleBackground: { stroke: "#e0f2f1" }, circleProgress: { stroke: "#4caf50" }, circleContentOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', zIndex: 1, padding: CIRCLE_BORDER_WIDTH + 5 }, runnerImageStyle: { width: RUNNER_ICON_SIZE, height: RUNNER_ICON_SIZE, marginBottom: 5, }, stepsCount: { fontSize: 56, fontWeight: 'bold', color: '#388e3c', lineHeight: 64, marginTop: _BASE_STEPS_COUNT_MARGIN_TOP - (RUNNER_ICON_SIZE - _BASE_RUNNER_ICON_SIZE), fontVariant: ['tabular-nums'] }, stepsLabel: { fontSize: 16, color: '#757575', marginTop: 0 }, goalContainerTouchable: { paddingVertical: 5 }, goalContainer: { flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row', alignItems: 'center', marginTop: 5 }, goalText: { fontSize: 14, color: '#757575', fontVariant: ['tabular-nums'] }, pencilIcon: { color: '#757575', marginLeft: I18nManager.isRTL ? 0 : 4, marginRight: I18nManager.isRTL ? 4 : 0 }, movingDot: { width: ICON_SIZE, height: ICON_SIZE, borderRadius: ICON_SIZE / 2, backgroundColor: '#4caf50', borderWidth: 2 }, statsRow: { flexDirection: 'row', justifyContent: 'space-around', width: '90%', marginTop: 25, alignSelf: 'center' }, statItemCircle: { width: 65, height: 65, borderRadius: 32.5, backgroundColor: '#EDF5F8', justifyContent: 'center', alignItems: 'center', marginBottom: 8 }, statIconInCircle: { color: '#43a047' }, statItem: { alignItems: 'center', flex: 1, paddingHorizontal: 5 }, statIcon: { color: "#4caf50" }, statValue: { fontSize: 20, fontWeight: 'bold', color: '#388e3c', marginTop: 5, fontVariant: ['tabular-nums'] }, statUnit: { fontSize: 14, color: '#757575', marginTop: 2 }, summaryCard: { flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff', borderRadius: 15, paddingHorizontal: 15, paddingVertical: 15, width: '90%', marginTop: 30, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, alignSelf: 'center' }, summaryTextContainer: { alignItems: I18nManager.isRTL ? 'flex-end' : 'flex-start', flex: 1, marginHorizontal: 12 }, summaryMainText: { fontSize: 18, fontWeight: 'bold', color: '#424242', textAlign: I18nManager.isRTL ? 'right' : 'left' }, summarySubText: { fontSize: 14, color: '#757575', textAlign: I18nManager.isRTL ? 'right' : 'left', marginTop: 2 }, summaryChevron: { color: "#bdbdbd" }, badgeContainer: { width: BADGE_CONTAINER_SIZE, height: BADGE_CONTAINER_SIZE, justifyContent: 'center', alignItems: 'center', position: 'relative' }, badgeBackgroundCircle: { stroke: "#e0f2f1"}, badgeProgressCircle: { stroke: "#4caf50" }, badgeTextContainer: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center' }, badgeText: { fontSize: 16, fontWeight: 'bold', color: '#4caf50', fontVariant: ['tabular-nums'] }, chartPressableArea: { width: '90%', alignSelf: 'center', marginTop: 20, marginBottom: 20 }, chartContainer: { paddingHorizontal: 5, paddingVertical: 15, backgroundColor: '#FFF', borderRadius: 15, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, flexDirection: 'row-reverse', position: 'relative' }, yAxisContainer: { width: Y_AXIS_WIDTH, height: BAR_CONTAINER_HEIGHT, justifyContent: 'space-between', alignItems: I18nManager.isRTL ? 'flex-start' : 'flex-end', paddingLeft: I18nManager.isRTL ? 5 : 0, paddingRight: I18nManager.isRTL ? 0 : 5 }, yAxisLabel: { fontSize: 11, color: '#757575', fontVariant: ['tabular-nums'], textAlign: I18nManager.isRTL ? 'left' : 'right' }, mainChartArea: { flex: 1, height: BAR_CONTAINER_HEIGHT + X_AXIS_HEIGHT + 10, position: 'relative', marginLeft: I18nManager.isRTL ? 5 : 0, marginRight: I18nManager.isRTL ? 0 : 5 }, barsContainer: { flexDirection: 'row-reverse', height: BAR_CONTAINER_HEIGHT, alignItems: 'flex-end', justifyContent: 'space-between', paddingHorizontal: BAR_SPACING / 2, zIndex: 2 }, barWrapper: { width: BAR_WIDTH + BAR_SPACING, alignItems: 'center', height: '100%', justifyContent: 'flex-end', position: 'relative', overflow: 'visible', marginLeft: -BAR_SPACING, paddingHorizontal: BAR_SPACING / 2 }, bar: { width: BAR_WIDTH, borderRadius: 4 }, barDefault: { backgroundColor: '#c8e6c9' }, barAchievedGoal: { backgroundColor: '#a5d6a7' }, barToday: { backgroundColor: '#66bb6a' }, barTodayAchieved: { backgroundColor: '#4caf50' }, selectedBar: { backgroundColor: '#2E7D32' }, xAxisContainer: { flexDirection: 'row-reverse', height: X_AXIS_HEIGHT, alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: BAR_SPACING / 2, marginTop: 8, borderTopColor: '#eee', borderTopWidth: StyleSheet.hairlineWidth }, dayLabelWrapper: { width: BAR_WIDTH + BAR_SPACING, alignItems: 'center', marginLeft: -BAR_SPACING, paddingHorizontal: BAR_SPACING / 2 }, xAxisLabel: { fontSize: 12, color: '#757575' }, xAxisLabelToday: { color: '#000000', fontWeight: 'bold' }, tooltipPositioner: { position: 'absolute', alignSelf: 'center', alignItems: 'center', zIndex: 10, elevation: 3, minWidth: 30, overflow: 'visible' }, tooltipBox: { backgroundColor: '#333333', borderRadius: 5, paddingVertical: 4, paddingHorizontal: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 1 }, tooltipText: { color: '#FFFFFF', fontSize: 12, fontWeight: 'bold', fontVariant: ['tabular-nums'], textAlign: 'center' }, tooltipArrow: { position: 'absolute', bottom: -TOOLTIP_ARROW_HEIGHT, width: 0, height: 0, borderLeftWidth: TOOLTIP_ARROW_WIDTH / 2, borderRightWidth: TOOLTIP_ARROW_WIDTH / 2, borderTopWidth: TOOLTIP_ARROW_HEIGHT, borderLeftColor: 'transparent', borderRightColor: 'transparent', borderTopColor: '#333333', alignSelf: 'center' }, modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.4)', justifyContent: 'center', alignItems: 'center' }, modalContent: { backgroundColor: 'white', borderRadius: 15, padding: 20, paddingTop: 50, width: width * 0.85, maxHeight: height * 0.75, alignItems: 'center', position: 'relative', elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 3.84 }, closeButtonRTL: { position: 'absolute', top: 10, left: I18nManager.isRTL ? undefined : 10, right: I18nManager.isRTL ? 10 : undefined, padding: 8, zIndex: 1 }, modalCloseIcon: { color: "#9e9e9e" }, modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#424242', marginBottom: 20, textAlign: 'center' }, goalListScrollView: { width: '100%', marginBottom: 20 }, goalOptionButton: { backgroundColor: '#f1f8e9', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 15, marginBottom: 10, width: '100%', alignItems: 'center', borderWidth: 1.5, borderColor: 'transparent' }, goalOptionButtonSelected: { backgroundColor: '#e8f5e9', borderColor: '#4caf50' }, goalOptionText: { fontSize: 16, color: '#388e3c', fontWeight: '500', fontVariant: ['tabular-nums'] }, goalOptionTextSelected: { color: '#2e7d32', fontWeight: 'bold' }, modalActions: { width: '100%', alignItems: 'center', paddingTop: 10, borderTopColor: '#eee', borderTopWidth: StyleSheet.hairlineWidth }, saveButton: { backgroundColor: '#4caf50', borderRadius: 12, paddingVertical: 14, width: '100%', alignItems: 'center', marginBottom: 10 }, saveButtonText: { color: 'white', fontSize: 16, fontWeight: 'bold' }, cancelButton: { backgroundColor: '#f5f5f5', borderRadius: 12, paddingVertical: 14, width: '100%', alignItems: 'center' }, cancelButtonText: { color: '#757575', fontSize: 16, fontWeight: '500' }, menuModalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.3)' }, menuModalContent: { position: 'absolute', backgroundColor: 'white', borderRadius: 8, paddingVertical: 5, minWidth: 200, elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 3.84 }, menuItemButton: { flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 15, paddingVertical: 12, width: '100%' }, titleMenuItemText: { fontSize: 16, color: '#2e7d32', fontWeight: 'bold' }, menuItemText: { fontSize: 16, color: '#333', textAlign: I18nManager.isRTL ? 'right' : 'left' }, menuItemTextDestructive: { color: '#d32f2f' }, menuSeparator: { height: StyleSheet.hairlineWidth, backgroundColor: '#e0e0e0', marginVertical: 5 }, titleMenuSeparator: { height: StyleSheet.hairlineWidth, backgroundColor: '#e0e0e0', marginVertical: 2 }, menuArrow: { position: 'absolute', width: 0, height: 0, borderLeftWidth: MENU_ARROW_WIDTH / 2, borderRightWidth: MENU_ARROW_WIDTH / 2, borderBottomWidth: MENU_ARROW_HEIGHT, borderStyle: 'solid', backgroundColor: 'transparent', borderLeftColor: 'transparent', borderRightColor: 'transparent', borderBottomColor: '#ffffff', zIndex: 20 }, titleMenuModalContent: { position: 'absolute', backgroundColor: '#FFFFFF', borderRadius: 8, paddingVertical: 5, width: 155, elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 3.84 },
+const lightStyles = StyleSheet.create({ 
+    safeArea: { flex: 1, backgroundColor: '#F7FDF9' }, 
+    scrollViewContent: { paddingBottom: 40, paddingHorizontal: 0, flexGrow: 1 }, 
+    topBar: { flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%', paddingVertical: 15, paddingHorizontal: 20 }, 
+    titleGroup: { flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row', alignItems: 'center' }, 
+    headerTitle: { fontSize: 22, fontWeight: 'bold', color: '#2e7d32' }, 
+    moreButton: { padding: 10 }, 
+    moreButtonIcon: { color: '#757575' }, 
+    moreButtonIconDisabled: { color: '#DCDCDC' }, 
+    periodSelectorContainer: { flexDirection: 'row-reverse', marginVertical: 10, backgroundColor: '#E8F5E9', borderRadius: 20, overflow: 'hidden', width: '85%', height: 40, alignSelf: 'center' }, 
+    periodButton: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 8 }, 
+    periodButtonInactive: { backgroundColor: 'transparent' }, 
+    periodButtonSelected: { backgroundColor: '#388e3c', borderRadius: 20 }, 
+    periodText: { fontSize: 16, fontWeight: 'bold' }, 
+    periodTextInactive: { color: '#388e3c' }, 
+    periodTextSelected: { color: '#ffffff' }, 
+    dayHeader: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', width: '65%', marginVertical: 15, alignSelf: 'center' }, 
+    dayHeaderText: { fontSize: 20, fontWeight: 'bold', color: '#2e7d32' }, 
+    dayHeaderArrow: { color: '#2e7d32' }, 
+    dayHeaderArrowDisabled: { color: '#a5d6a7' }, 
+    mainDisplayArea: { width: '100%', alignItems: 'center', marginVertical: 5, paddingBottom: 10, paddingHorizontal: 15 }, 
+    circle: { width: CIRCLE_SIZE, height: CIRCLE_SIZE, justifyContent: 'center', alignItems: 'center', position: 'relative' }, 
+    circleBackground: { stroke: "#e0f2f1" }, 
+    circleProgress: { stroke: "#4caf50" }, 
+    circleContentOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', zIndex: 1, padding: CIRCLE_BORDER_WIDTH + 5 }, 
+    runnerImageStyle: { width: RUNNER_ICON_SIZE, height: RUNNER_ICON_SIZE, marginBottom: 5, }, 
+    stepsCount: { fontSize: 56, fontWeight: 'bold', color: '#388e3c', lineHeight: 64, marginTop: _BASE_STEPS_COUNT_MARGIN_TOP - (RUNNER_ICON_SIZE - _BASE_RUNNER_ICON_SIZE), fontVariant: ['tabular-nums'] }, 
+    stepsLabel: { fontSize: 16, color: '#757575', marginTop: 0 }, 
+    goalContainerTouchable: { paddingVertical: 5 }, 
+    goalContainer: { flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row', alignItems: 'center', marginTop: 5 }, 
+    goalText: { fontSize: 14, color: '#757575', fontVariant: ['tabular-nums'] }, 
+    pencilIcon: { color: '#757575', marginLeft: I18nManager.isRTL ? 0 : 4, marginRight: I18nManager.isRTL ? 4 : 0 }, 
+    movingDot: { width: ICON_SIZE, height: ICON_SIZE, borderRadius: ICON_SIZE / 2, backgroundColor: '#4caf50', borderWidth: 2 }, 
+    statsRow: { flexDirection: 'row', justifyContent: 'space-around', width: '90%', marginTop: 25, alignSelf: 'center' }, 
+    statItemCircle: { width: 65, height: 65, borderRadius: 32.5, backgroundColor: '#EDF5F8', justifyContent: 'center', alignItems: 'center', marginBottom: 8 }, 
+    statIconInCircle: { color: '#43a047' }, 
+    statItem: { alignItems: 'center', flex: 1, paddingHorizontal: 5 }, 
+    statIcon: { color: "#4caf50" }, 
+    statValue: { fontSize: 20, fontWeight: 'bold', color: '#388e3c', marginTop: 5, fontVariant: ['tabular-nums'] }, 
+    statUnit: { fontSize: 14, color: '#757575', marginTop: 2 }, 
+    summaryCard: { flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff', borderRadius: 15, paddingHorizontal: 15, paddingVertical: 15, width: '90%', marginTop: 30, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, alignSelf: 'center' }, 
+    summaryTextContainer: { alignItems: I18nManager.isRTL ? 'flex-end' : 'flex-start', flex: 1, marginHorizontal: 12 }, 
+    summaryMainText: { fontSize: 18, fontWeight: 'bold', color: '#424242', textAlign: I18nManager.isRTL ? 'right' : 'left' }, 
+    summarySubText: { fontSize: 14, color: '#757575', textAlign: I18nManager.isRTL ? 'right' : 'left', marginTop: 2 }, 
+    summaryChevron: { color: "#bdbdbd" }, 
+    badgeContainer: { width: BADGE_CONTAINER_SIZE, height: BADGE_CONTAINER_SIZE, justifyContent: 'center', alignItems: 'center', position: 'relative' }, 
+    badgeBackgroundCircle: { stroke: "#e0f2f1"}, 
+    badgeProgressCircle: { stroke: "#4caf50" }, 
+    badgeTextContainer: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center' }, 
+    badgeText: { fontSize: 16, fontWeight: 'bold', color: '#4caf50', fontVariant: ['tabular-nums'] }, 
+    chartPressableArea: { width: '90%', alignSelf: 'center', marginTop: 20, marginBottom: 20 }, 
+    chartContainer: { paddingHorizontal: 5, paddingVertical: 15, backgroundColor: '#FFF', borderRadius: 15, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, flexDirection: 'column', position: 'relative' }, 
+    chartHeaderContainer: { width: '100%', marginBottom: 10, paddingHorizontal: 10 },
+    chartTitle: { fontSize: 18, fontWeight: 'bold', color: '#2e7d32' },
+    chartInnerContent: { width: '100%' },
+    yAxisContainer: { width: Y_AXIS_WIDTH, height: BAR_CONTAINER_HEIGHT, justifyContent: 'space-between', alignItems: I18nManager.isRTL ? 'flex-start' : 'flex-end', paddingLeft: I18nManager.isRTL ? 5 : 0, paddingRight: I18nManager.isRTL ? 0 : 5 }, 
+    yAxisLabel: { fontSize: 11, color: '#757575', fontVariant: ['tabular-nums'], textAlign: I18nManager.isRTL ? 'left' : 'right' }, 
+    mainChartArea: { flex: 1, height: BAR_CONTAINER_HEIGHT + X_AXIS_HEIGHT + 10, position: 'relative', marginLeft: I18nManager.isRTL ? 5 : 0, marginRight: I18nManager.isRTL ? 0 : 5 }, 
+    barsContainer: { flexDirection: 'row-reverse', height: BAR_CONTAINER_HEIGHT, alignItems: 'flex-end', justifyContent: 'space-between', paddingHorizontal: BAR_SPACING / 2, zIndex: 2 }, 
+    barWrapper: { width: BAR_WIDTH + BAR_SPACING, alignItems: 'center', height: '100%', justifyContent: 'flex-end', position: 'relative', overflow: 'visible', paddingHorizontal: BAR_SPACING / 2 }, 
+    bar: { width: BAR_WIDTH, borderRadius: 4 }, 
+    barDefault: { backgroundColor: '#c8e6c9' }, 
+    barAchievedGoal: { backgroundColor: '#a5d6a7' }, 
+    barToday: { backgroundColor: '#66bb6a' }, 
+    barTodayAchieved: { backgroundColor: '#4caf50' }, 
+    selectedBar: { backgroundColor: '#2E7D32' }, 
+    xAxisContainer: { flexDirection: 'row-reverse', height: X_AXIS_HEIGHT, alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: BAR_SPACING / 2, marginTop: 8, borderTopColor: '#eee', borderTopWidth: StyleSheet.hairlineWidth }, 
+    dayLabelWrapper: { width: BAR_WIDTH + BAR_SPACING, alignItems: 'center', paddingHorizontal: BAR_SPACING / 2 }, 
+    xAxisLabel: { fontSize: 12, color: '#757575' }, 
+    xAxisLabelToday: { color: '#000000', fontWeight: 'bold' }, 
+    tooltipPositioner: { position: 'absolute', alignSelf: 'center', alignItems: 'center', zIndex: 10, elevation: 3, minWidth: 80, overflow: 'visible' }, 
+    tooltipBox: { backgroundColor: '#333333', borderRadius: 5, paddingVertical: 4, paddingHorizontal: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 1 }, 
+    tooltipText: { color: '#FFFFFF', fontSize: 12, fontWeight: 'bold', fontVariant: ['tabular-nums'], textAlign: 'center' }, 
+    tooltipArrow: { position: 'absolute', bottom: -TOOLTIP_ARROW_HEIGHT, width: 0, height: 0, borderLeftWidth: TOOLTIP_ARROW_WIDTH / 2, borderRightWidth: TOOLTIP_ARROW_WIDTH / 2, borderTopWidth: TOOLTIP_ARROW_HEIGHT, borderLeftColor: 'transparent', borderRightColor: 'transparent', borderTopColor: '#333333', alignSelf: 'center' }, 
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.4)', justifyContent: 'center', alignItems: 'center' }, 
+    modalContent: { backgroundColor: 'white', borderRadius: 15, padding: 20, paddingTop: 50, width: width * 0.85, maxHeight: height * 0.75, alignItems: 'center', position: 'relative', elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 3.84 }, 
+    closeButtonRTL: { position: 'absolute', top: 10, left: I18nManager.isRTL ? undefined : 10, right: I18nManager.isRTL ? 10 : undefined, padding: 8, zIndex: 1 }, 
+    modalCloseIcon: { color: "#9e9e9e" }, 
+    modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#424242', marginBottom: 20, textAlign: 'center' }, 
+    goalListScrollView: { width: '100%', marginBottom: 20 }, 
+    goalOptionButton: { backgroundColor: '#f1f8e9', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 15, marginBottom: 10, width: '100%', alignItems: 'center', borderWidth: 1.5, borderColor: 'transparent' }, 
+    goalOptionButtonSelected: { backgroundColor: '#e8f5e9', borderColor: '#4caf50' }, 
+    goalOptionText: { fontSize: 16, color: '#388e3c', fontWeight: '500', fontVariant: ['tabular-nums'] }, 
+    goalOptionTextSelected: { color: '#2e7d32', fontWeight: 'bold' }, 
+    modalActions: { width: '100%', alignItems: 'center', paddingTop: 10, borderTopColor: '#eee', borderTopWidth: StyleSheet.hairlineWidth }, 
+    saveButton: { backgroundColor: '#4caf50', borderRadius: 12, paddingVertical: 14, width: '100%', alignItems: 'center', marginBottom: 10 }, 
+    saveButtonText: { color: 'white', fontSize: 16, fontWeight: 'bold' }, 
+    cancelButton: { backgroundColor: '#f5f5f5', borderRadius: 12, paddingVertical: 14, width: '100%', alignItems: 'center' }, 
+    cancelButtonText: { color: '#757575', fontSize: 16, fontWeight: '500' }, 
+    menuModalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.3)' }, 
+    menuModalContent: { position: 'absolute', backgroundColor: 'white', borderRadius: 8, paddingVertical: 5, minWidth: 200, elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 3.84 }, 
+    menuItemButton: { flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 15, paddingVertical: 12, width: '100%' }, 
+    titleMenuItemText: { fontSize: 16, color: '#2e7d32', fontWeight: 'bold' }, 
+    menuItemText: { fontSize: 16, color: '#333', textAlign: I18nManager.isRTL ? 'right' : 'left' }, 
+    menuItemTextDestructive: { color: '#d32f2f' }, 
+    menuSeparator: { height: StyleSheet.hairlineWidth, backgroundColor: '#e0e0e0', marginVertical: 5 }, 
+    titleMenuSeparator: { height: StyleSheet.hairlineWidth, backgroundColor: '#e0e0e0', marginVertical: 2 }, 
+    menuArrow: { position: 'absolute', width: 0, height: 0, borderLeftWidth: MENU_ARROW_WIDTH / 2, borderRightWidth: MENU_ARROW_WIDTH / 2, borderBottomWidth: MENU_ARROW_HEIGHT, borderStyle: 'solid', backgroundColor: 'transparent', borderLeftColor: 'transparent', borderRightColor: 'transparent', borderBottomColor: '#ffffff', zIndex: 20 }, 
+    titleMenuModalContent: { position: 'absolute', backgroundColor: '#FFFFFF', borderRadius: 8, paddingVertical: 5, width: 155, elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 3.84 },
 });
 
 const darkStyles = StyleSheet.create({
@@ -649,6 +853,7 @@ const darkStyles = StyleSheet.create({
     badgeProgressCircle: { stroke: "#80CBC4" },
     badgeText: { ...lightStyles.badgeText, color: '#80CBC4' },
     chartContainer: { ...lightStyles.chartContainer, backgroundColor: '#1E1E1E', shadowColor: '#000' },
+    chartTitle: { ...lightStyles.chartTitle, color: '#80CBC4' },
     yAxisLabel: { ...lightStyles.yAxisLabel, color: '#A0A0A0' },
     barDefault: { backgroundColor: '#3E5052' },
     barAchievedGoal: { backgroundColor: '#4A6A64' },
