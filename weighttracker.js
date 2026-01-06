@@ -279,21 +279,29 @@ const WeightTracker = ({ navigation, language, darkMode }) => {
     const getChartConfig = (isDark) => ({ backgroundColor: isDark ? '#1e1e1e' : '#ffffff', backgroundGradientFrom: isDark ? '#1e1e1e' : '#ffffff', backgroundGradientTo: isDark ? '#1e1e1e' : '#ffffff', decimalPlaces: 1, color: (opacity = 1) => isDark ? `rgba(230, 230, 230, ${opacity})` : `rgba(0, 0, 0, ${opacity})`, labelColor: (opacity = 1) => isDark ? `rgba(200, 200, 200, ${opacity})` : `rgba(100, 100, 100, ${opacity})`, style: { borderRadius: 16 }, propsForDots: { r: '6', strokeWidth: '2', stroke: '#4CAF50' }, });
     const chartConfig = getChartConfig(darkMode);
 
-    // ============================================
-    // تعديل اتجاهات النصوص والصفوف (عكس الطبيعي)
-    // العربي = يسار (Left) | الإنجليزي = يمين (Right)
-    // ============================================
     const dynamicStyles = { 
         textAlign: { textAlign: isRTL ? 'left' : 'right' }, 
         row: { flexDirection: isRTL ? 'row' : 'row-reverse' }, 
         rtlText: { writingDirection: isRTL ? 'ltr' : 'rtl' } 
     };
     
+    // =========================================================
+    // التصحيح: حساب مكان الشريط ليكون في المنتصف دائماً
+    // =========================================================
     let tooltipStyle = {}; 
     if (tooltip) { 
-        const horizontalOffset = 35;
-        const verticalOffset = tooltip.y - 42;
-        tooltipStyle = { left: tooltip.x - horizontalOffset, top: verticalOffset };
+        // عرض الشريط 80 (محدد في styles.tooltipWrapper)
+        // بنطرح 40 (النص) من الاحداثي x عشان الشريط ييجي في سنتر النقطة
+        const horizontalOffset = 40; 
+
+        // tooltip.y هو مكان النقطة على الرسمة
+        // بنطرح 45 عشان الشريط يطلع فوق النقطة، وبنزود 8 عشان الـ marginVertical
+        const verticalOffset = tooltip.y - 45 + 8; 
+        
+        tooltipStyle = { 
+            left: tooltip.x - horizontalOffset, 
+            top: verticalOffset 
+        };
     }
     
     return (
@@ -312,7 +320,6 @@ const WeightTracker = ({ navigation, language, darkMode }) => {
         <TouchableOpacity activeOpacity={1} onPress={hideTooltip}>
           <View style={styles.card}>
             <Text style={[styles.cardTitle, dynamicStyles.textAlign, dynamicStyles.rtlText]}>{t('currentStatus')}</Text>
-            {/* تم عكس اتجاه الصف في dynamicStyles */}
             <View style={[styles.currentWeightContainer, dynamicStyles.row]}>
               <Text style={styles.currentWeight}>{currentEntry.weight.toFixed(1)} {t('kg')}</Text>
               <View style={[styles.changeBadge, { backgroundColor: totalChange <= 0 ? '#4CAF50' : '#F44336' }]}>
@@ -332,7 +339,7 @@ const WeightTracker = ({ navigation, language, darkMode }) => {
         
         <View style={styles.card}>
           <Text style={[styles.cardTitle, dynamicStyles.textAlign, dynamicStyles.rtlText]}>{t('progressChart')}</Text>
-          <View style={styles.filterContainer}>
+          <View style={[styles.filterContainer, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
             {['1W', '1M', '3M', 'All'].map(filter => {
                 const isPremiumFeature = ['1M', '3M', 'All'].includes(filter);
                 const isLocked = isPremiumFeature && !isUserPremium;
@@ -351,6 +358,7 @@ const WeightTracker = ({ navigation, language, darkMode }) => {
             })}
           </View>
 
+          {/* تم إضافة direction: ltr هنا في ال styles.chartContainer تحت عشان يظبط الاحداثيات */}
           <View style={styles.chartContainer}>
             {chartHistory.length > 1 ? (
               <LineChart
@@ -489,7 +497,6 @@ const WeightTracker = ({ navigation, language, darkMode }) => {
       const greenBackgroundScreens = ['food', 'water', 'steps', 'reports', 'distance', 'calories', 'activeTime'];
       const safeAreaStyle = [ styles.safeArea, greenBackgroundScreens.includes(currentScreen) && { backgroundColor: darkMode ? '#141914' : '#f0f8f0' } ];
 
-      // أيضاً نعكس اتجاه المودال
       const modalTextAlign = isRTL ? 'left' : 'right';
       const modalDirection = isRTL ? 'row' : 'row-reverse';
 
@@ -506,7 +513,6 @@ const WeightTracker = ({ navigation, language, darkMode }) => {
                   <View style={styles.bottomFloatingLayer} pointerEvents="box-none">
                       
                       {currentScreen === 'weight' && (
-                          // عكس مكان الزر العائم أيضاً: عربي(يسار الشاشة) - انجليزي(يمين الشاشة)
                           <TouchableOpacity 
                               style={[styles.fab, isRTL ? { left: 20 } : { right: 20 }, { bottom: 40 + insets.bottom }]} 
                               onPress={() => setModalVisible(true)}
@@ -609,11 +615,6 @@ const createStyles = (isDark, isRTL) => StyleSheet.create({
     
     header: { alignItems: 'center', justifyContent: 'center', marginBottom: 16, position: 'relative' },
     screenTitle: { textAlign: 'center', fontSize: 28, fontWeight: 'bold', color: isDark ? '#e0e0e0' : '#2c3e50' },
-    // ============================================
-    // تعديل مكان الأيقونة (الهيدر):
-    // إذا عربي (isRTL) -> الأيقونة يمين (right)
-    // إذا إنجليزي -> الأيقونة يسار (left)
-    // ============================================
     headerIcon: { position: 'absolute', [isRTL ? 'right' : 'left']: 0, padding: 5, },
     loadingText: { fontSize: 16, color: isDark ? '#aaa' : '#555', textAlign: 'center', lineHeight: 24, marginBottom: 8 },
     card: { backgroundColor: isDark ? '#1e1e1e' : '#fff', borderRadius: 16, padding: 20, marginBottom: 16, elevation: 3, shadowColor: isDark ? '#000' : '#555', shadowOffset: { width: 0, height: 2 }, shadowOpacity: isDark ? 0.7 : 0.1, shadowRadius: 4 },
@@ -642,8 +643,15 @@ const createStyles = (isDark, isRTL) => StyleSheet.create({
     tipCard: { backgroundColor: isDark ? 'rgba(76, 175, 80, 0.15)' : 'rgba(76, 175, 80, 0.08)', borderRadius: 16, padding: 20, marginBottom: 16, alignItems: 'center', borderWidth: 1, borderColor: isDark ? 'rgba(76, 175, 80, 0.3)' : 'rgba(76, 175, 80, 0.2)' },
     tipLabel: { fontSize: 18, fontWeight: '600', color: isDark ? '#a5d6a7' : '#2e7d32', marginBottom: 8 },
     tipText: { fontSize: 15, fontStyle: 'italic', textAlign: 'center', lineHeight: 22, color: isDark ? '#cfd8dc' : '#37474f' },
-    chartContainer: { position: 'relative' },
-    tooltipWrapper: { position: 'absolute', alignItems: 'center', zIndex: 10 },
+    
+    // --- هنا التعديل المهم جدا ---
+    chartContainer: { 
+        position: 'relative', 
+        direction: 'ltr' // هذا السطر يحل مشكلة الأماكن في العربي
+    },
+    // ----------------------------
+    
+    tooltipWrapper: { position: 'absolute', alignItems: 'center', justifyContent: 'center', zIndex: 10, width: 80, },
     tooltipContainer: { flexDirection: 'row', alignItems: 'baseline', backgroundColor: 'black', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 6, elevation: 5 },
     tooltipValueText: { color: 'white', fontWeight: 'bold', fontSize: 15 },
     tooltipUnitText: { color: 'white', fontWeight: 'normal', fontSize: 14, marginLeft: 4 },
