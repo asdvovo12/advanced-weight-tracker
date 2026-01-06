@@ -39,7 +39,7 @@ const translations = {
     premiumMember: 'Premium Member', 
     signInSync: 'Sign in / Sync Data', 
     guestDesc: 'Sign in to save your data permanently',
-    loadingProfile: 'Loading Profile...' // تمت الإضافة
+    loadingProfile: 'Loading Profile...'
   },
   ar: { 
     profile: 'الملف الشخصي', 
@@ -62,7 +62,7 @@ const translations = {
     premiumMember: 'عضو مميز', 
     signInSync: 'تسجيل الدخول / مزامنة البيانات', 
     guestDesc: 'سجل دخولك لحفظ بياناتك من الضياع',
-    loadingProfile: 'جار تحميل الملف الشخصي...' // تمت الإضافة
+    loadingProfile: 'جار تحميل الملف الشخصي...'
   },
 };
 
@@ -120,29 +120,43 @@ const ProfileScreen = ({ navigation, language, darkMode, navigateToPremium, navi
   useEffect(() => { if (language && language !== currentLanguage) { setCurrentLanguage(language); } }, [language, currentLanguage]);
   useEffect(() => { const newThemeMode = darkMode ? 'dark' : 'light'; if (newThemeMode !== currentThemeMode) { setCurrentThemeMode(newThemeMode); } }, [darkMode, currentThemeMode]);
 
+  // --- دالة تحميل البيانات المعدلة (تقرأ من Metadata + Database) ---
   const loadProfileData = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
+      
+      let profileDataToSave = {};
+
       if (user) {
+          // 1. محاولة جلب البيانات من جدول profiles
           const { data: profile } = await supabase.from('profiles').select('full_name, avatar_url').eq('id', user.id).single();
-          if (profile) {
-              const storedLocal = await AsyncStorage.getItem(USER_PROFILE_DATA_KEY);
-              const localData = storedLocal ? JSON.parse(storedLocal) : {};
-              const mergedData = { 
-                  ...localData, 
-                  username: profile.full_name,
-              };
-              await AsyncStorage.setItem(USER_PROFILE_DATA_KEY, JSON.stringify(mergedData));
-          }
+          
+          // 2. دمج البيانات: الأولوية للجدول، ثم لبيانات جوجل (Metadata)
+          const googleMeta = user.user_metadata || {};
+          
+          const finalName = profile?.full_name || googleMeta.full_name || googleMeta.name || t('userNamePlaceholder');
+          const finalImage = profile?.avatar_url || googleMeta.avatar_url || googleMeta.picture || null;
+
+          profileDataToSave = { 
+              username: finalName,
+              profileImageUrl: finalImage
+          };
+          
+          // حفظ البيانات الجديدة المدمجة محلياً
+          await AsyncStorage.setItem(USER_PROFILE_DATA_KEY, JSON.stringify(profileDataToSave));
+          await AsyncStorage.setItem(LOGGED_IN_EMAIL_KEY, user.email);
       }
 
+      // 3. قراءة البيانات من الجهاز
       const [userProfileDataString, loggedInUserEmail, subscriptionDataString] = await Promise.all([
         AsyncStorage.getItem(USER_PROFILE_DATA_KEY),
         AsyncStorage.getItem(LOGGED_IN_EMAIL_KEY),
         AsyncStorage.getItem(USER_SUBSCRIPTION_DATA_KEY)
       ]);
-      const profileData = userProfileDataString ? JSON.parse(userProfileDataString) : {};
       
+      const storedProfileData = userProfileDataString ? JSON.parse(userProfileDataString) : profileDataToSave;
+      
+      // التحقق من الاشتراك
       let isSubscribed = false;
       if (subscriptionDataString) {
         const subscriptionData = JSON.parse(subscriptionDataString);
@@ -151,18 +165,20 @@ const ProfileScreen = ({ navigation, language, darkMode, navigateToPremium, navi
         }
       }
       
-      if (loggedInUserEmail) {
+      // تحديث الواجهة
+      if (loggedInUserEmail || (user && user.email)) {
           setIsGuest(false);
-          setDisplayedUsername(profileData.username || t('userNamePlaceholder'));
-          setDisplayedEmail(loggedInUserEmail);
+          setDisplayedUsername(storedProfileData.username || t('userNamePlaceholder'));
+          setDisplayedEmail(loggedInUserEmail || user.email);
       } else {
           setIsGuest(true);
-          setDisplayedUsername(profileData.username || t('userNamePlaceholder')); 
+          setDisplayedUsername(storedProfileData.username || t('userNamePlaceholder')); 
           setDisplayedEmail(t('emailNotFound')); 
       }
 
-      setProfileImageUri(profileData.profileImageUrl || null);
+      setProfileImageUri(storedProfileData.profileImageUrl || null);
       setIsPremium(isSubscribed);
+
     } catch (error) {
       console.error("[ProfileScreen] Error loading profile data:", error);
       setDisplayedEmail(t('errorLoadingData'));
@@ -222,7 +238,6 @@ const ProfileScreen = ({ navigation, language, darkMode, navigateToPremium, navi
   const menuArrowIcon = I18nManager.isRTL ? "chevron-back-outline" : "chevron-back-outline";
   const headerBackIcon = I18nManager.isRTL ? "arrow-back-outline" : "arrow-forward-outline";
 
-  // هنا تم إصلاح الخطأ بتنظيم الكود
   if (!isInitialized) {
     return ( 
       <View style={styles.loadingContainer}> 
@@ -248,7 +263,6 @@ const ProfileScreen = ({ navigation, language, darkMode, navigateToPremium, navi
            <View style={styles.cardTopIcons}>
              
 <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('editprofile')}>
-                {/* تم تغيير الحجم هنا من ICON_SIZE إلى 20 ليصبح أصغر */}
                 <MaterialCommunityIcons 
                     name="square-edit-outline" 
                     size={20} 

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef, useMemo } from 'react'; // <<< THIS LINE IS FIXED
+﻿import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ScrollView,
   KeyboardAvoidingView, Platform, Alert, ActivityIndicator, I18nManager,
@@ -6,6 +6,7 @@ import {
 import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
 import { useNavigation, useIsFocused, CommonActions } from '@react-navigation/native';
 import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking'; 
 import { supabase } from './supabaseClient';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -153,30 +154,94 @@ const SignUpScreen = ({ language = 'ar', isDarkMode = false }) => {
         if (isFocused) { setActiveTab('SignUp'); }
     }, [isFocused, language]);
 
+    // --- Listener لمراقبة الدخول ومعالجة الرابط ---
+    useEffect(() => {
+        const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+            if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
+                console.log('✅ SignUp/Login detected! Navigating...');
+                
+                setIsGoogleLoading(false);
+                setIsFacebookLoading(false);
+                setIsLoading(false);
+                
+                navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'Weight' }] }));
+            }
+        });
+
+        // معالجة الرابط يدوياً للتأكد من التقاط التوكن
+        const handleDeepLink = async (event) => {
+            let url = event.url;
+            if (url && url.includes('access_token') && url.includes('refresh_token')) {
+                try {
+                    console.log('🔗 Deep link received in SignUp');
+                    const accessToken = url.match(/access_token=([^&]+)/)?.[1];
+                    const refreshToken = url.match(/refresh_token=([^&]+)/)?.[1];
+
+                    if (accessToken && refreshToken) {
+                        console.log('🔓 Tokens found! Setting session...');
+                        await supabase.auth.setSession({
+                            access_token: accessToken,
+                            refresh_token: refreshToken,
+                        });
+                    }
+                } catch (err) {
+                    console.error("Error parsing URL:", err);
+                }
+            }
+        };
+
+        const linkingSubscription = Linking.addEventListener('url', handleDeepLink);
+        Linking.getInitialURL().then((url) => { if (url) handleDeepLink({ url }); });
+
+        return () => {
+            authListener.subscription.unsubscribe();
+            linkingSubscription.remove();
+        };
+    }, []);
+
     const anyLoading = isLoading || isGoogleLoading || isFacebookLoading;
 
+    // --- دالة التسجيل عبر السوشيال ميديا (مع إضافة prompt) ---
     const handleSocialSignUp = async (provider) => {
-        await supabase.auth.signOut();
-        if (anyLoading) return;
-        
-        if (provider === 'google') setIsGoogleLoading(true);
-        if (provider === 'facebook') setIsFacebookLoading(true);
-
         try {
-            const { data, error } = await supabase.auth.signInWithOAuth({ provider });
+            await supabase.auth.signOut();
+            if (anyLoading) return;
+            
+            if (provider === 'google') setIsGoogleLoading(true);
+            if (provider === 'facebook') setIsFacebookLoading(true);
 
-            if (error) {
-                console.error(`${provider} Sign-Up Error:`, error);
-                Alert.alert(translation.socialSignUpError.replace('{provider}', provider), error.message);
-            } else if (data.session){
-                 navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'Weight' }] }));
+            const redirectUrl = Linking.createURL('/');
+            console.log('👉 Redirect URL:', redirectUrl);
+            
+            const { data, error } = await supabase.auth.signInWithOAuth({ 
+              provider,
+              options: {
+                redirectTo: redirectUrl,
+                skipBrowserRedirect: true,
+                // 👇👇 هذا السطر هو الحل لإظهار قائمة الايميلات 👇👇
+                queryParams: {
+                    prompt: 'select_account',
+                }
+              }
+            });
+
+            if (error) throw error;
+
+            if (data?.url) {
+                const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
+                
+                if (result.type !== 'success') {
+                    if (provider === 'google') setIsGoogleLoading(false);
+                    if (provider === 'facebook') setIsFacebookLoading(false);
+                }
             }
+
         } catch (error) {
             console.error(`Unexpected ${provider} Sign-Up Error:`, error);
-            Alert.alert(translation.errorTitle, translation.socialSignUpUnexpectedError.replace('{provider}', provider));
-        } finally {
-            if (provider === 'google') setIsGoogleLoading(false);
-            if (provider === 'facebook') setIsFacebookLoading(false);
+            Alert.alert(translation.errorTitle, error.message || translation.socialSignUpUnexpectedError.replace('{provider}', provider));
+            
+            setIsGoogleLoading(false);
+            setIsFacebookLoading(false);
         }
     };
 

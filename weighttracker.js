@@ -340,7 +340,7 @@ const WeightTracker = ({ navigation, language, darkMode }) => {
         const horizontalOffset = 75; 
         
         // رفع التولتيب لأعلى أكثر
-        const verticalOffset = tooltip.y - 35; 
+        const verticalOffset = tooltip.y - 40; 
         
         tooltipStyle = { 
             left: tooltip.x - horizontalOffset, 
@@ -715,7 +715,7 @@ chartContainer: {
         alignItems: 'center',
         
         // شيلنا العلامات من هنا عشان يقص أي زيادة بره البرواز
-        overflow: 'hidden',  
+        overflow: 'visible',  
         
         borderRadius: 16, 
         zIndex: 100, 
