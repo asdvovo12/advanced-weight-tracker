@@ -275,9 +275,58 @@ const WeightTracker = ({ navigation, language, darkMode }) => {
     };
     
     const chartHistory = getFilteredChartHistory();
-    const chartData = { labels: chartHistory.map(entry => `${new Date(entry.date).getDate()}/${new Date(entry.date).getMonth() + 1}`), datasets: [{ data: chartHistory.map(entry => entry.weight), color: (opacity = 1) => `rgba(76, 175, 80, ${opacity})`, strokeWidth: 2, }], };
-    const getChartConfig = (isDark) => ({ backgroundColor: isDark ? '#1e1e1e' : '#ffffff', backgroundGradientFrom: isDark ? '#1e1e1e' : '#ffffff', backgroundGradientTo: isDark ? '#1e1e1e' : '#ffffff', decimalPlaces: 1, color: (opacity = 1) => isDark ? `rgba(230, 230, 230, ${opacity})` : `rgba(0, 0, 0, ${opacity})`, labelColor: (opacity = 1) => isDark ? `rgba(200, 200, 200, ${opacity})` : `rgba(100, 100, 100, ${opacity})`, style: { borderRadius: 16 }, propsForDots: { r: '6', strokeWidth: '2', stroke: '#4CAF50' }, });
+
+    // --- تعديل لقلب الرسمة في العربي ---
+    // بنعمل نسخة من الداتا عشان نقلبها لو اللغة عربي
+    let finalChartData = [...chartHistory];
+    if (isRTL) {
+        finalChartData.reverse();
+    }
+
+    const chartData = { 
+        labels: finalChartData.map(entry => `${new Date(entry.date).getDate()}/${new Date(entry.date).getMonth() + 1}`), 
+        datasets: [{ 
+            data: finalChartData.map(entry => entry.weight), 
+            color: (opacity = 1) => `rgba(76, 175, 80, ${opacity})`, 
+            strokeWidth: 2, 
+        }], 
+    };
+    
+    const getChartConfig = (isDark) => ({ 
+        // بنخلي الخلفية شفافة عشان تاخد لون الكارت اللي تحتها
+        backgroundColor: 'transparent',
+        backgroundGradientFrom: 'transparent',
+        backgroundGradientTo: 'transparent',
+        backgroundGradientFromOpacity: 0,
+        backgroundGradientToOpacity: 0,
+        
+        decimalPlaces: 1, 
+        color: (opacity = 1) => isDark ? `rgba(230, 230, 230, ${opacity})` : `rgba(0, 0, 0, ${opacity})`, 
+        labelColor: (opacity = 1) => isDark ? `rgba(200, 200, 200, ${opacity})` : `rgba(100, 100, 100, ${opacity})`, 
+        style: { borderRadius: 16 }, 
+        propsForDots: { r: '6', strokeWidth: '2', stroke: '#4CAF50' },
+        formatYLabel: (y) => language === 'ar' ? '' : parseFloat(y).toFixed(1)
+    });
+
     const chartConfig = getChartConfig(darkMode);
+
+    // --- حساب الأرقام للجهة اليمنى (للعربي فقط) ---
+    let rightAxisLabels = [];
+    if (language === 'ar' && chartHistory.length > 0) {
+        const weights = chartHistory.map(e => e.weight);
+        const max = Math.max(...weights);
+        const min = Math.min(...weights);
+        
+        const range = max - min;
+        if (range === 0) {
+            rightAxisLabels = [max.toFixed(1)];
+        } else {
+             for(let i=5; i>=0; i--) {
+                const val = min + (range * (i / 5));
+                rightAxisLabels.push(val.toFixed(1));
+             }
+        }
+    }
 
     const dynamicStyles = { 
         textAlign: { textAlign: isRTL ? 'left' : 'right' }, 
@@ -285,18 +334,13 @@ const WeightTracker = ({ navigation, language, darkMode }) => {
         rtlText: { writingDirection: isRTL ? 'ltr' : 'rtl' } 
     };
     
-    // =========================================================
-    // التصحيح: حساب مكان الشريط ليكون في المنتصف دائماً
-    // =========================================================
     let tooltipStyle = {}; 
     if (tooltip) { 
-        // عرض الشريط 80 (محدد في styles.tooltipWrapper)
-        // بنطرح 40 (النص) من الاحداثي x عشان الشريط ييجي في سنتر النقطة
-        const horizontalOffset = 40; 
-
-        // tooltip.y هو مكان النقطة على الرسمة
-        // بنطرح 45 عشان الشريط يطلع فوق النقطة، وبنزود 8 عشان الـ marginVertical
-        const verticalOffset = tooltip.y - 45 + 8; 
+        // توسيط التولتيب، بما ان العرض 80، نصه 40
+        const horizontalOffset = 75; 
+        
+        // رفع التولتيب لأعلى أكثر
+        const verticalOffset = tooltip.y - 35; 
         
         tooltipStyle = { 
             left: tooltip.x - horizontalOffset, 
@@ -358,20 +402,41 @@ const WeightTracker = ({ navigation, language, darkMode }) => {
             })}
           </View>
 
-          {/* تم إضافة direction: ltr هنا في ال styles.chartContainer تحت عشان يظبط الاحداثيات */}
           <View style={styles.chartContainer}>
             {chartHistory.length > 1 ? (
-              <LineChart
-                data={chartData}
-                width={Dimensions.get('window').width - 64}
-                height={220}
-                chartConfig={chartConfig}
-                bezier
-                withShadow
-                style={{ marginVertical: 8, borderRadius: 16 }}
-                segments={5}
-                onDataPointClick={({ value, x, y, index }) => { if (tooltip && tooltip.index === index) { hideTooltip(); } else { setTooltip({ x, y, value, index }); } }}
-              />
+              <View style={{position: 'relative'}}>
+<LineChart
+                    data={chartData}
+                    // رجعنا العرض -64 عشان يكون مظبوط جوه الكارت وميخرجش بره
+                    width={Dimensions.get('window').width - 0} 
+                    height={220}
+                    chartConfig={chartConfig}
+                    bezier
+                    withShadow
+                    style={{ 
+                        marginVertical: 8, 
+                        borderRadius: 16,
+                        // زقيت الرسمة من الشمال سنة عشان متلزقش في الحيطة
+                        paddingLeft: -90, 
+                    }}
+                    segments={5}
+                    // هنا بنحجز مسافة 50 بيكسل فاضية على اليمين عشان الأرقام اللي ضفناها
+                    paddingRight={language === 'ar' ? 50 : 0}
+                    
+                    formatYLabel={(y) => language === 'ar' ? '' : parseFloat(y).toFixed(1)}
+                    onDataPointClick={({ value, x, y, index }) => { if (tooltip && tooltip.index === index) { hideTooltip(); } else { setTooltip({ x, y, value, index }); } }}
+                  />
+                  
+                  {/* --- كود الأرقام الجانبية للعربي --- */}
+                  {isRTL && (
+                    <View style={styles.rightAxisContainer}> 
+                        {rightAxisLabels.map((label, index) => (
+                            <Text key={index} style={styles.rightAxisText}>{label}</Text>
+                        ))}
+                    </View>
+                  )}
+                  
+              </View>
             ) : (
               <View style={{height: 220, justifyContent: 'center', alignItems: 'center'}}>
                 <Text style={{color: darkMode ? '#999' : '#777'}}>Not enough data to draw a chart for this period.</Text>
@@ -644,12 +709,33 @@ const createStyles = (isDark, isRTL) => StyleSheet.create({
     tipLabel: { fontSize: 18, fontWeight: '600', color: isDark ? '#a5d6a7' : '#2e7d32', marginBottom: 8 },
     tipText: { fontSize: 15, fontStyle: 'italic', textAlign: 'center', lineHeight: 22, color: isDark ? '#cfd8dc' : '#37474f' },
     
-    // --- هنا التعديل المهم جدا ---
-    chartContainer: { 
+chartContainer: { 
         position: 'relative', 
-        direction: 'ltr' // هذا السطر يحل مشكلة الأماكن في العربي
+        direction: 'ltr', 
+        alignItems: 'center',
+        
+        // شيلنا العلامات من هنا عشان يقص أي زيادة بره البرواز
+        overflow: 'hidden',  
+        
+        borderRadius: 16, 
+        zIndex: 100, 
     },
-    // ----------------------------
+    
+    rightAxisContainer: {
+        position: 'absolute',
+        right: 45,     // نفس الرقم اللي حضرتك حطيته
+        top: 20,       
+        bottom: 40,    
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        zIndex: 10,
+    },
+    rightAxisText: {
+        fontSize: 12,
+        fontWeight: 'bold',
+        color: isDark ? '#B0B0B0' : 'rgba(100, 100, 100, 0.7)',
+        backgroundColor: 'transparent',
+    },
     
     tooltipWrapper: { position: 'absolute', alignItems: 'center', justifyContent: 'center', zIndex: 10, width: 80, },
     tooltipContainer: { flexDirection: 'row', alignItems: 'baseline', backgroundColor: 'black', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 6, elevation: 5 },

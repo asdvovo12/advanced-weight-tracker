@@ -8,7 +8,7 @@ import * as Progress from 'react-native-progress';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import MCommunityIcon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { supabase } from './supabaseClient'; // استيراد Supabase
+import { supabase } from './supabaseClient';
 
 if (Platform.OS === 'android') { if (UIManager.setLayoutAnimationEnabledExperimental) UIManager.setLayoutAnimationEnabledExperimental(true); }
 
@@ -35,10 +35,28 @@ const DailyStepsBadge = ({ value, label, isActive = false }) => ( <BadgeBase con
 const HexBadge = ({ value, label, isActive = false }) => ( <BadgeBase containerStyle={currentStyles.badgeHex} value={value} label={label} isActive={isActive} labelStyleOverride={isActive ? { color: currentStyles.activeBadgeLabel.color, fontWeight: 'bold' } : {}}><WavyBackground active={isActive} style={currentStyles.badgeWavyBackground} activeColor={currentStyles.activeBadgeBase.borderColor} inactiveColor={currentStyles.inactiveBadgeBase.borderColor} />{isActive && <View style={[currentStyles.activeHexInnerGlow, { borderColor: currentStyles.activeBadgeBase.borderColor+'4D' }]} />}</BadgeBase> );
 const OvalBadge = ({ value, label, isActive = false }) => { const InactiveOvalDetail = () => (<View style={currentStyles.ovalDetailContainer}><MCommunityIcon name="chevron-down" size={18} color={currentStyles.inactiveBadgeBase.borderColor} /></View>); return ( <BadgeBase containerStyle={currentStyles.badgeOval} value={value} label={label} isActive={isActive} labelStyleOverride={isActive ? { color: currentStyles.activeBadgeLabel.color, fontWeight: 'bold' } : {}}>{!isActive && <InactiveOvalDetail />}</BadgeBase> ); };
 
-const AchievementsScreen = ({ navigation, route }) => {
-  const [language, setLanguage] = useState(route.params?.language || (I18nManager.isRTL ? 'ar' : 'en'));
+const AchievementsScreen = ({ navigation, route, language: propLanguage, darkMode: propDarkMode }) => {
+  
+  const [language, setLanguage] = useState(propLanguage || route.params?.language || (I18nManager.isRTL ? 'ar' : 'en'));
+  
   const systemColorScheme = useColorScheme();
-  const [isDarkMode, setIsDarkMode] = useState(route.params?.isDarkMode === undefined ? systemColorScheme === 'dark' : route.params?.isDarkMode);
+  const [isDarkMode, setIsDarkMode] = useState(
+    propDarkMode !== undefined 
+      ? propDarkMode 
+      : (route.params?.isDarkMode === undefined ? systemColorScheme === 'dark' : route.params?.isDarkMode)
+  );
+
+  useEffect(() => {
+    if (propLanguage && propLanguage !== language) {
+      setLanguage(propLanguage);
+    }
+  }, [propLanguage]);
+
+  useEffect(() => {
+    if (propDarkMode !== undefined && propDarkMode !== isDarkMode) {
+      setIsDarkMode(propDarkMode);
+    }
+  }, [propDarkMode]);
 
   const translation = useMemo(() => translations[language] || translations.en, [language]);
   currentStyles = useMemo(() => isDarkMode ? darkStyles : lightStyles, [isDarkMode]);
@@ -67,16 +85,10 @@ const AchievementsScreen = ({ navigation, route }) => {
 
   const [readyForCelebrationCheck, setReadyForCelebrationCheck] = useState(false);
 
-  useEffect(() => {
-    const loadAppPreferences = async () => { /* ... نفس الكود السابق ... */ };
-    loadAppPreferences();
-  }, [systemColorScheme, language, isDarkMode, route.params?.language, route.params?.isDarkMode]);
-
   const dailyStepsBadgesData = useMemo(() => [ { value: '3K', labelKey: 'badgeStartMoving', requiredSteps: 3000 }, { value: '7K', labelKey: 'badgeActiveDay', requiredSteps: 7000 }, { value: '10K', labelKey: 'badgeAchievementDay', requiredSteps: 10000 }, { value: '14K', labelKey: 'badgeStepsExpert', requiredSteps: 14000 }, { value: '20K', labelKey: 'badgeWanderer', requiredSteps: 20000 }, { value: '30K', labelKey: 'badgeWalkMarathoner', requiredSteps: 30000 }, { value: '50K', labelKey: 'badgeExpertAdventurer', requiredSteps: 50000 }, { value: '75K', labelKey: 'badgeDistanceConqueror', requiredSteps: 75000 }, { value: '100K', labelKey: 'badgeWalkLegend', requiredSteps: 100000 }, ].sort((a, b) => a.requiredSteps - b.requiredSteps), []);
   const consecutiveBadgesData = useMemo(() => [ { value: '3X', labelKey: 'badgeTripleChampion', requiredDays: 3 }, { value: '7X', labelKey: 'badgeWeeklyWinner', requiredDays: 7 }, { value: '14X', labelKey: 'badgeTwoWeekVictor', requiredDays: 14 }, { value: '21X', labelKey: 'badgeHabitBuilder', requiredDays: 21 }, { value: '50X', labelKey: 'badgeGoalClinger', requiredDays: 50 }, { value: '100X', labelKey: 'badgeStreakCenturion', requiredDays: 100 }, ].sort((a, b) => a.requiredDays - b.requiredDays), []);
   const totalBadgesData = useMemo(() => [ { value: '7D', labelKey: 'badge7Days', requiredDays: 7 }, { value: '14D', labelKey: 'badge14Days', requiredDays: 14 }, { value: '30D', labelKey: 'badge30Days', requiredDays: 30 }, { value: '60D', labelKey: 'badge60Days', requiredDays: 60 }, { value: '100D', labelKey: 'badge100Days', requiredDays: 100 }, { value: '180D', labelKey: 'badge180Days', requiredDays: 180 }, { value: '270D', labelKey: 'badge270Days', requiredDays: 270 }, { value: '360D', labelKey: 'badge360Days', requiredDays: 360 }, ].sort((a, b) => a.requiredDays - b.requiredDays), []);
 
-  // 1. تحميل البيانات (مع المزامنة)
   useEffect(() => {
     const loadData = async () => {
       setIsLoadingTotalSteps(true);
@@ -88,13 +100,11 @@ const AchievementsScreen = ({ navigation, route }) => {
         const { data: { user } } = await supabase.auth.getUser();
         let cloudData = null;
 
-        // أ. جلب من السيرفر
         if (user) {
             const { data } = await supabase.from('achievements').select('*').eq('user_id', user.id).single();
             if (data) cloudData = data;
         }
 
-        // ب. جلب من المحلي
         const [
           storedTotalStr, storedStreakStr, storedMaxChallengeStr,
           tierToCelebrateStr, storedLastCelebratedLevel, storedLastCelebratedDaily, storedLastCelebratedConsecutive,
@@ -113,7 +123,6 @@ const AchievementsScreen = ({ navigation, route }) => {
         let localMax = parseInt(storedMaxChallengeStr || '0', 10);
         let localLastLevel = parseInt(storedLastCelebratedLevel || '0', 10);
 
-        // ج. دمج وتحديث (الأكبر يفوز)
         if (cloudData) {
             if (cloudData.total_accumulated_steps > localTotal) {
                 localTotal = cloudData.total_accumulated_steps;
@@ -158,7 +167,6 @@ const AchievementsScreen = ({ navigation, route }) => {
     loadData();
   }, [totalBadgesData]);
 
-  // دالة مساعدة للحفظ في السيرفر
   const syncToCloud = async (updates) => {
       try {
           const { data: { user } } = await supabase.auth.getUser();
@@ -190,16 +198,14 @@ const AchievementsScreen = ({ navigation, route }) => {
 
     let celebratedThisLoad = false;
 
-    // 1. Level Up Celebration
     if (currentLevelInfo.level >= 2 && currentLevelInfo.level > lastCelebratedLevel) {
       setShowConfetti(true);
       AsyncStorage.setItem(LAST_CELEBRATED_LEVEL_KEY, currentLevelInfo.level.toString());
       setLastCelebratedLevel(currentLevelInfo.level);
-      syncToCloud({ last_celebrated_level: currentLevelInfo.level }); // Sync
+      syncToCloud({ last_celebrated_level: currentLevelInfo.level });
       celebratedThisLoad = true;
     }
 
-    // 2. Daily Steps Milestone
     if (!celebratedThisLoad && passedDailySteps > 0) {
       let currentHighestAchievedDailyValue = 0;
       for (const badge of dailyStepsBadgesData) {
@@ -214,7 +220,6 @@ const AchievementsScreen = ({ navigation, route }) => {
       }
     }
 
-    // 3. Consecutive Days Milestone
     if (!celebratedThisLoad && consecutiveDays > 0) {
       let currentHighestAchievedConsecutiveValue = 0;
       for (const badge of consecutiveBadgesData) {
@@ -229,7 +234,6 @@ const AchievementsScreen = ({ navigation, route }) => {
       }
     }
     
-    // 4. Total Days Milestone
     if (!celebratedThisLoad && pendingTierCelebration !== null) {
       if (maxCompletedChallenge >= pendingTierCelebration) {
         setShowConfetti(true);
@@ -252,7 +256,7 @@ const AchievementsScreen = ({ navigation, route }) => {
     <View style={currentStyles.collapsibleSection}>
       <TouchableOpacity onPress={onToggle} activeOpacity={0.7}>
         <View style={currentStyles.sectionHeader}>
-          <Icon name={isExpanded ? "keyboard-arrow-down" : (I18nManager.isRTL ? "keyboard-arrow-left" : "keyboard-arrow-right")} size={28} color={currentStyles.dropdownArrow.color} style={currentStyles.dropdownArrowStyle} />
+          <Icon name={isExpanded ? "keyboard-arrow-down" : (I18nManager.isRTL ? "keyboard-arrow-right" : "keyboard-arrow-left")} size={28} color={currentStyles.dropdownArrow.color} style={currentStyles.dropdownArrowStyle} />
           <Text style={currentStyles.sectionTitle}>{translation[titleKey]}</Text>
         </View>
       </TouchableOpacity>
@@ -260,7 +264,7 @@ const AchievementsScreen = ({ navigation, route }) => {
     </View> 
   ));
 
-  if (!currentStyles) return <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}><ActivityIndicator size="large" color="#33691E" /></View>;
+  if (!currentStyles) return <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}><ActivityIndicator size="large" color="#4CAF50" /></View>;
 
   return (
     <SafeAreaView style={currentStyles.safeArea}>
@@ -279,10 +283,139 @@ const AchievementsScreen = ({ navigation, route }) => {
 };
 
 const { width } = Dimensions.get('window');
-const lightStyles = StyleSheet.create({ safeArea: { flex: 1, backgroundColor: '#F7FDF9', }, flexContainer: { flex: 1 }, scrollViewStyle: { flex: 1, }, contentContainer: { alignItems: 'center', paddingBottom: 30 }, headerContainer: { height: 60, flexDirection: I18nManager.isRTL ? 'row' : 'row-reverse', justifyContent: 'flex-start', alignItems: 'center', paddingHorizontal: 15, width: '100%', }, actionButton: { padding: 10 }, headerIcon: { color: '#33691E' }, topSection: { width: '90%', alignItems: 'center', paddingVertical: 20, paddingHorizontal: 15, marginBottom: 15, backgroundColor: '#FFFFFF', borderRadius: 20, elevation: 3, shadowColor:'#B0BEC5', shadowOffset:{width:0, height:2}, shadowOpacity:0.1, shadowRadius: 4, }, levelBadgeContainer: { marginBottom: 10, width: 120, height: 120, justifyContent: 'center', alignItems: 'center', position: 'relative', }, levelProgressCircle: { position: 'absolute', top: 5, left: 5, }, levelProgressCircleColor: { color: '#689F38' }, levelProgressCircleUnfilled: { color: '#DCEDC8' }, levelBadgeInner: { width: 95, height: 95, borderRadius: 47.5, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#EEEEEE', justifyContent: 'center', alignItems: 'center', zIndex: 1, shadowColor: '#B0BEC5', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 3, elevation: 4, }, levelBadgeText: { fontSize: 48, fontWeight: '300', color: '#757575', fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-light', }, levelTitle: { fontSize: 22, fontWeight: 'bold', color: '#33691E', marginBottom: 5, textAlign: 'center', }, levelProgressText: { fontSize: 15, color: '#757575', marginBottom: 15, textAlign: 'center', minHeight: 20, paddingHorizontal: 10, }, boldPrimaryGreenText: { fontWeight: 'bold', color: '#2E7D32', }, progressBarArea: { width: '85%', alignItems: 'center', marginTop: 10, }, progressBarContainer: { height: 8, width: '100%', backgroundColor: '#DCEDC8', borderRadius: 4, position: 'relative', overflow: 'hidden', }, progressBarFill: { height: '100%', backgroundColor: '#2E7D32', borderRadius: 4, position: 'absolute', left: 0, top: 0, }, progressBarMarker: { position: 'absolute', top: -4, width: 16, height: 16, borderRadius: 8, backgroundColor: '#689F38', borderWidth: 2, borderColor: '#FFFFFF', transform: [{ translateX: -8 }], shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 1, elevation: 3, zIndex: 5, }, progressLabels: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginTop: 5, }, progressLabelText: { fontSize: 13, color: '#757575', fontVariant: ['tabular-nums'] }, collapsibleSection: { width: '90%', backgroundColor: '#FFFFFF', borderRadius: 20, marginBottom: 15, shadowColor: '#90A4AE', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.10, shadowRadius: 8, elevation: 5, overflow: 'hidden', }, sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 15, paddingHorizontal: 20, }, sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#33691E', textAlign: I18nManager.isRTL ? 'right' : 'left', flex: 1, marginRight: I18nManager.isRTL ? 0 : 10, marginLeft: I18nManager.isRTL ? 10 : 0 }, dropdownArrow: { color: '#757575'}, dropdownArrowStyle: { }, badgesGrid: { flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row', flexWrap: 'wrap', justifyContent: 'flex-start', paddingTop: 5, paddingBottom: 15, paddingHorizontal: 10, }, badgeContainer: { width: '33.33%', alignItems: 'center', marginBottom: 25, paddingHorizontal: 5, }, badgeBase: { width: 85, height: 85, justifyContent: 'center', alignItems: 'center', position: 'relative', overflow: 'hidden', }, badgeTextContainer: { zIndex: 2, position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', backgroundColor: 'transparent', }, badgeValue: { fontSize: 22, fontWeight: 'bold', fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium', textAlign: 'center', }, badgeLabel: { fontSize: 13, textAlign: 'center', paddingHorizontal: 2, fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif', marginTop: 8, color: '#757575', }, badgeCircle: { borderRadius: 42.5 }, badgeHex: { borderRadius: 15 }, badgeOval: { width: 100, height: 70, borderRadius: 35 }, activeBadgeBase: { backgroundColor: '#F1F8E9', borderWidth: 2, borderColor: '#2E7D32', shadowColor: '#2E7D32', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 5, elevation: 6, }, inactiveBadgeBase: { backgroundColor: '#ECEFF1', borderWidth: 1, borderColor: '#CFD8DC', shadowColor: '#B0BEC5', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.15, shadowRadius: 2, elevation: 2, }, activeBadgeTextValue: { color: '#33691E', }, inactiveBadgeText: { color: '#757575', }, activeBadgeLabel: { fontWeight: 'bold', color: '#757575', }, inactiveBadgeLabel: { color: '#757575', }, wavyBackgroundBase: { position: 'absolute', bottom: 10, left: 0, right: 0, height: 15, alignItems: 'center', zIndex: 0, opacity: 0.8, }, badgeWavyBackground: { bottom: 15 }, waveLineBase: { height: 2.5, borderRadius: 1.5, marginBottom: 3 }, ovalDetailContainer: { position: 'absolute', bottom: 10, zIndex: 1, opacity: 0.7 }, activeHexInnerGlow: { position: 'absolute', top: 2, left: 2, right: 2, bottom: 2, borderRadius: 13, borderWidth: 2, zIndex: 0, borderColor: '#2E7D32' + '4D', }, confetti: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000, pointerEvents: 'none', }, loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 50, width: '90%', backgroundColor: '#FFFFFF', borderRadius: 20, marginBottom: 15, elevation: 3, shadowColor:'#B0BEC5', shadowOffset:{width:0, height:2}, shadowOpacity:0.1, shadowRadius: 4, }, loadingIndicator: { color: '#2E7D32' }, loadingText: { marginTop: 15, fontSize: 16, color: '#757575', }, sectionLoadingContainer: { height: 100, justifyContent: 'center', alignItems: 'center', },
+
+// ----------------------------------------------------------------------
+// Updated Styles to match "WeightTracker" look and feel (Colors & Backgrounds)
+// ----------------------------------------------------------------------
+const lightStyles = StyleSheet.create({ 
+  // تعديل الخلفية لتكون #F7FDF9 زي الصفحة التانية
+  safeArea: { flex: 1, backgroundColor: '#F7FDF9' }, 
+  flexContainer: { flex: 1 }, 
+  scrollViewStyle: { flex: 1 }, 
+  contentContainer: { alignItems: 'center', paddingBottom: 30 }, 
+  headerContainer: { height: 60, flexDirection: I18nManager.isRTL ? 'row' : 'row-reverse', justifyContent: 'flex-end', alignItems: 'center', paddingHorizontal: 15, width: '100%' }, 
+  actionButton: { padding: 10 }, 
+  // تعديل لون الأيقونة ليكون نفس درجة الأخضر الغامق
+  headerIcon: { color: '#2e7d32' }, 
+  
+  topSection: { 
+    width: '90%', alignItems: 'center', paddingVertical: 20, paddingHorizontal: 15, marginBottom: 15, 
+    backgroundColor: '#FFFFFF', borderRadius: 16, 
+    elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, 
+  }, 
+  
+  levelBadgeContainer: { marginBottom: 10, width: 120, height: 120, justifyContent: 'center', alignItems: 'center', position: 'relative' }, 
+  levelProgressCircle: { position: 'absolute', top: 5, left: 5 }, 
+  // تعديل ألوان الدائرة
+  levelProgressCircleColor: { color: '#4CAF50' }, 
+  levelProgressCircleUnfilled: { color: '#e0f2f1' }, // لون أفتح متناسق مع الصفحة التانية
+  levelBadgeInner: { 
+    width: 95, height: 95, borderRadius: 47.5, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#e0f2f1', 
+    justifyContent: 'center', alignItems: 'center', zIndex: 1, 
+    shadowColor: '#b0b0b0', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 3, elevation: 4 
+  }, 
+  levelBadgeText: { fontSize: 48, fontWeight: '300', color: '#388e3c', fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-light' }, 
+  
+  // تعديل العناوين لنفس درجة الأخضر الغامق
+  levelTitle: { fontSize: 22, fontWeight: 'bold', color: '#2e7d32', marginBottom: 5, textAlign: 'center' }, 
+  levelProgressText: { fontSize: 15, color: '#757575', marginBottom: 15, textAlign: 'center', minHeight: 20, paddingHorizontal: 10 }, 
+  boldPrimaryGreenText: { fontWeight: 'bold', color: '#2e7d32' }, 
+  
+  progressBarArea: { width: '85%', alignItems: 'center', marginTop: 10 }, 
+  progressBarContainer: { height: 8, width: '100%', backgroundColor: '#e0f2f1', borderRadius: 4, position: 'relative', overflow: 'hidden' }, 
+  progressBarFill: { height: '100%', backgroundColor: '#4CAF50', borderRadius: 4, position: 'absolute', left: 0, top: 0 }, 
+  progressBarMarker: { 
+    position: 'absolute', top: -4, width: 16, height: 16, borderRadius: 8, backgroundColor: '#388e3c', borderWidth: 2, borderColor: '#FFFFFF', 
+    transform: [{ translateX: -8 }], shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 1, elevation: 3, zIndex: 5 
+  }, 
+  
+  progressLabels: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginTop: 5 }, 
+  progressLabelText: { fontSize: 13, color: '#757575', fontVariant: ['tabular-nums'] }, 
+  
+  collapsibleSection: { 
+    width: '90%', backgroundColor: '#FFFFFF', borderRadius: 16, marginBottom: 15, 
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3, overflow: 'hidden' 
+  }, 
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 15, paddingHorizontal: 20 }, 
+  sectionTitle: { fontSize: 18, fontWeight: '600', color: '#2e7d32', textAlign: I18nManager.isRTL ? 'right' : 'left', flex: 1, marginRight: I18nManager.isRTL ? 0 : 10, marginLeft: I18nManager.isRTL ? 10 : 0 }, 
+  dropdownArrow: { color: '#757575'}, 
+  dropdownArrowStyle: { }, 
+  
+  badgesGrid: { flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row', flexWrap: 'wrap', justifyContent: 'flex-start', paddingTop: 5, paddingBottom: 15, paddingHorizontal: 10 }, 
+  badgeContainer: { width: '33.33%', alignItems: 'center', marginBottom: 25, paddingHorizontal: 5 }, 
+  badgeBase: { width: 85, height: 85, justifyContent: 'center', alignItems: 'center', position: 'relative', overflow: 'hidden' }, 
+  badgeTextContainer: { zIndex: 2, position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', backgroundColor: 'transparent' }, 
+  badgeValue: { fontSize: 22, fontWeight: 'bold', fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium', textAlign: 'center' }, 
+  badgeLabel: { fontSize: 13, textAlign: 'center', paddingHorizontal: 2, fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif', marginTop: 8, color: '#757575' }, 
+  badgeCircle: { borderRadius: 42.5 }, 
+  badgeHex: { borderRadius: 15 }, 
+  badgeOval: { width: 100, height: 70, borderRadius: 35 }, 
+  
+  // تعديل ألوان البادجات (Badges) لتتناسب
+  activeBadgeBase: { backgroundColor: '#e8f5e9', borderWidth: 2, borderColor: '#4CAF50', shadowColor: '#4CAF50', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 5, elevation: 6 }, 
+  inactiveBadgeBase: { backgroundColor: '#F5F5F5', borderWidth: 1, borderColor: '#E0E0E0', shadowColor: '#B0BEC5', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.15, shadowRadius: 2, elevation: 2 }, 
+  
+  activeBadgeTextValue: { color: '#2E7D32' }, 
+  inactiveBadgeText: { color: '#9E9E9E' }, 
+  activeBadgeLabel: { fontWeight: 'bold', color: '#388e3c' }, 
+  inactiveBadgeLabel: { color: '#9E9E9E' }, 
+  
+  wavyBackgroundBase: { position: 'absolute', bottom: 10, left: 0, right: 0, height: 15, alignItems: 'center', zIndex: 0, opacity: 0.8 }, 
+  badgeWavyBackground: { bottom: 15 }, 
+  waveLineBase: { height: 2.5, borderRadius: 1.5, marginBottom: 3 }, 
+  ovalDetailContainer: { position: 'absolute', bottom: 10, zIndex: 1, opacity: 0.7 }, 
+  activeHexInnerGlow: { position: 'absolute', top: 2, left: 2, right: 2, bottom: 2, borderRadius: 13, borderWidth: 2, zIndex: 0, borderColor: '#4CAF50' + '4D' }, 
+  confetti: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000, pointerEvents: 'none' }, 
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 50, width: '90%', backgroundColor: '#FFFFFF', borderRadius: 16, marginBottom: 15, elevation: 3, shadowColor:'#555', shadowOffset:{width:0, height:2}, shadowOpacity:0.1, shadowRadius: 4 }, 
+  loadingIndicator: { color: '#4CAF50' }, 
+  loadingText: { marginTop: 15, fontSize: 16, color: '#757575' }, 
+  sectionLoadingContainer: { height: 100, justifyContent: 'center', alignItems: 'center' },
 });
+
 const darkStyles = StyleSheet.create({
-  ...lightStyles, safeArea: { ...lightStyles.safeArea, backgroundColor: '#121212' }, headerIcon: { color: '#B0BEC5' }, topSection: { ...lightStyles.topSection, backgroundColor: '#1E1E1E', shadowColor: '#000' }, levelProgressCircleColor: { color: '#00796B' }, levelProgressCircleUnfilled: { color: '#37474F' }, levelBadgeInner: { ...lightStyles.levelBadgeInner, backgroundColor: '#2C2C2C', borderColor: '#424242' }, levelBadgeText: { ...lightStyles.levelBadgeText, color: '#CFD8DC' }, levelTitle: { ...lightStyles.levelTitle, color: '#E0E0E0' }, levelProgressText: { ...lightStyles.levelProgressText, color: '#B0BEC5' }, boldPrimaryGreenText: { ...lightStyles.boldPrimaryGreenText, color: '#80CBC4' }, progressBarContainer: { ...lightStyles.progressBarContainer, backgroundColor: '#37474F' }, progressBarFill: { ...lightStyles.progressBarFill, backgroundColor: '#00796B' }, progressBarMarker: { ...lightStyles.progressBarMarker, backgroundColor: '#004D40', borderColor: '#1E1E1E' }, progressLabelText: { ...lightStyles.progressLabelText, color: '#B0BEC5' }, collapsibleSection: { ...lightStyles.collapsibleSection, backgroundColor: '#1E1E1E', shadowColor: '#000' }, sectionTitle: { ...lightStyles.sectionTitle, color: '#E0E0E0' }, dropdownArrow: { color: '#B0BEC5' }, activeBadgeBase: { ...lightStyles.activeBadgeBase, backgroundColor: '#263238', borderColor: '#00796B', shadowColor: '#00796B', }, inactiveBadgeBase: { ...lightStyles.inactiveBadgeBase, backgroundColor: '#37474F', borderColor: '#546E7A', shadowColor: '#000', }, activeBadgeTextValue: { ...lightStyles.activeBadgeTextValue, color: '#E0F2F1' }, inactiveBadgeText: { ...lightStyles.inactiveBadgeText, color: '#90A4AE' }, activeBadgeLabel: { ...lightStyles.activeBadgeLabel, color: '#B0BEC5' }, inactiveBadgeLabel: { ...lightStyles.inactiveBadgeLabel, color: '#90A4AE' }, activeHexInnerGlow: { ...lightStyles.activeHexInnerGlow, borderColor: '#00796B' + '4D' }, loadingContainer: { ...lightStyles.loadingContainer, backgroundColor: '#1E1E1E', shadowColor: '#000' }, loadingIndicator: { color: '#80CBC4' }, loadingText: { ...lightStyles.loadingText, color: '#B0BEC5' },
+  ...lightStyles, 
+  // تعديل الخلفية الداكنة لتطابق #121212
+  safeArea: { ...lightStyles.safeArea, backgroundColor: '#121212' }, 
+  headerIcon: { color: '#E0E0E0' }, 
+  
+  // Cards Background #1E1E1E
+  topSection: { ...lightStyles.topSection, backgroundColor: '#1E1E1E', shadowColor: '#000', shadowOpacity: 0.7 }, 
+  
+  // *** KEY CHANGE: Using Teal/Cyan Accents (#80CBC4) instead of Green to match Code 2 Dark Mode ***
+  levelProgressCircleColor: { color: '#80CBC4' }, 
+  levelProgressCircleUnfilled: { color: '#333333' }, 
+  
+  levelBadgeInner: { ...lightStyles.levelBadgeInner, backgroundColor: '#2C2C2C', borderColor: '#333333', shadowColor: '#000' }, 
+  levelBadgeText: { ...lightStyles.levelBadgeText, color: '#80CBC4' }, 
+  
+  levelTitle: { ...lightStyles.levelTitle, color: '#80CBC4' }, 
+  levelProgressText: { ...lightStyles.levelProgressText, color: '#B0B0B0' }, 
+  boldPrimaryGreenText: { ...lightStyles.boldPrimaryGreenText, color: '#80CBC4' }, 
+  
+  progressBarContainer: { ...lightStyles.progressBarContainer, backgroundColor: '#333333' }, 
+  progressBarFill: { ...lightStyles.progressBarFill, backgroundColor: '#80CBC4' }, 
+  progressBarMarker: { ...lightStyles.progressBarMarker, backgroundColor: '#80CBC4', borderColor: '#1E1E1E' }, 
+  
+  progressLabelText: { ...lightStyles.progressLabelText, color: '#A0A0A0' }, 
+  
+  collapsibleSection: { ...lightStyles.collapsibleSection, backgroundColor: '#1E1E1E', shadowColor: '#000', shadowOpacity: 0.7 }, 
+  sectionTitle: { ...lightStyles.sectionTitle, color: '#80CBC4' }, 
+  dropdownArrow: { color: '#B0B0B0' }, 
+  
+  // Badges in Dark Mode (Using Teal)
+  activeBadgeBase: { ...lightStyles.activeBadgeBase, backgroundColor: '#004D40', borderColor: '#80CBC4', shadowColor: '#80CBC4' }, 
+  inactiveBadgeBase: { ...lightStyles.inactiveBadgeBase, backgroundColor: '#2C2C2C', borderColor: '#424242', shadowColor: '#000' }, 
+  
+  activeBadgeTextValue: { ...lightStyles.activeBadgeTextValue, color: '#E0F2F1' }, 
+  inactiveBadgeText: { ...lightStyles.inactiveBadgeText, color: '#78909c' }, 
+  activeBadgeLabel: { ...lightStyles.activeBadgeLabel, color: '#80CBC4' }, 
+  inactiveBadgeLabel: { ...lightStyles.inactiveBadgeLabel, color: '#78909c' }, 
+  
+  activeHexInnerGlow: { ...lightStyles.activeHexInnerGlow, borderColor: '#80CBC4' + '4D' }, 
+  
+  loadingContainer: { ...lightStyles.loadingContainer, backgroundColor: '#1E1E1E', shadowColor: '#000' }, 
+  loadingIndicator: { color: '#80CBC4' }, 
+  loadingText: { ...lightStyles.loadingText, color: '#B0B0B0' },
 });
 
 export default AchievementsScreen;
