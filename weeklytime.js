@@ -1,9 +1,8 @@
-﻿// WeeklyTime.js (الكود الكامل مع دعم اللغات والوضع الداكن)
+﻿// WeeklyTime.js (Fixed Layout & Infinite Scroll)
 
 import React, { useState, useMemo, useCallback } from 'react';
 import {
-  SafeAreaView,
-  View,
+  View, // Changed from SafeAreaView
   Text,
   StyleSheet,
   ScrollView,
@@ -91,13 +90,25 @@ const NewMonthlyChart = ({ styles, data, todayIndex, onNextWeek, onPrevWeek, wee
     const yAxisLabels = useMemo(() => Array.from({ length: 5 }, (_, i) => (yAxisMax - (yAxisMax / 4) * i).toLocaleString(locale)), [yAxisMax, locale]);
     const getBarHeight = useCallback((value) => yAxisMax > 0 ? `${Math.min((value / yAxisMax) * 100, 100)}%` : '0%', [yAxisMax]);
 
+    const GoBackButton = (
+        <TouchableOpacity onPress={onPrevWeek}>
+            <Icon name="chevron-forward-outline" size={24} color={styles.chevron.color} />
+        </TouchableOpacity>
+    );
+
+    const GoForwardButton = (
+        <TouchableOpacity onPress={onNextWeek} disabled={isNextButtonDisabled} activeOpacity={0.7}>
+            <Icon name="chevron-back-outline" size={24} color={isNextButtonDisabled ? styles.disabledChevron.color : styles.chevron.color} />
+        </TouchableOpacity>
+    );
+
     return (
         <View style={styles.chartCard}>
             <View>
                 <View style={styles.dateNavigator}>
-                  <TouchableOpacity onPress={onPrevWeek}><Icon name="chevron-forward-outline" size={24} color={styles.chevron.color} /></TouchableOpacity>
+                  { language === 'ar' ? GoBackButton : GoForwardButton }
                   <Text style={styles.dateText}>{weekDateRange.display}</Text>
-                  <TouchableOpacity onPress={onNextWeek} disabled={isNextButtonDisabled} activeOpacity={0.7}><Icon name="chevron-back-outline" size={24} color={isNextButtonDisabled ? styles.disabledChevron.color : styles.chevron.color} /></TouchableOpacity>
+                  { language === 'ar' ? GoForwardButton : GoBackButton }
                 </View>
                 <View style={styles.summaryContainer}>
                   <View style={styles.summaryBox}><Text style={styles.summaryValue}>{avgHours}</Text><Text style={styles.summaryLabel}>{translation.avgLabel}</Text></View>
@@ -154,7 +165,7 @@ const ActivitySummary = ({ styles, totalCalories, trend, mostActiveTimeRange, to
 const WeeklyTime = ({ language, isDarkMode }) => {
   const translation = useMemo(() => translations[language] || translations.en, [language]);
   const theme = useMemo(() => isDarkMode ? darkTheme : lightTheme, [isDarkMode]);
-  const styles = useMemo(() => getStyles(theme), [theme]);
+  const styles = useMemo(() => getStyles(theme, language === 'ar'), [theme, language]);
   const startOfWeekDay = useMemo(() => language === 'ar' ? 6 : 0, [language]);
   const locale = useMemo(() => language === 'ar' ? 'ar-EG' : 'en-US', [language]);
   
@@ -217,10 +228,10 @@ const WeeklyTime = ({ language, isDarkMode }) => {
     setCurrentDate(nextWeekStart); 
   };
   
-  if (!memoizedData) { return ( <SafeAreaView style={styles.safeArea}><View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}><ActivityIndicator size="large" color={theme.mainText} /></View></SafeAreaView> ); }
+  if (!memoizedData) { return ( <View style={styles.safeArea}><View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}><ActivityIndicator size="large" color={theme.mainText} /></View></View> ); }
   
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.mainContainer}>
         <NewMonthlyChart 
             styles={styles} 
@@ -246,48 +257,58 @@ const WeeklyTime = ({ language, isDarkMode }) => {
             translation={translation}
         />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
 // Dynamic Stylesheet
-const getStyles = (theme) => StyleSheet.create({
+const getStyles = (theme, isRTL) => StyleSheet.create({
     safeArea: { flex: 1, backgroundColor: theme.safeArea },
     mainContainer: { padding: 15, paddingBottom: 50 },
     chartCard: { backgroundColor: theme.cardBackground, borderRadius: 20, marginBottom: 20, shadowColor: theme.shadowColor, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 5, elevation: 2, overflow: 'hidden' },
-    dateNavigator: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 15 },
+    dateNavigator: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 15 },
     dateText: { fontSize: 18, fontWeight: '600', color: theme.headerTitle },
     chevron: { color: theme.chevron },
     disabledChevron: { color: theme.disabledChevron },
-    summaryContainer: { flexDirection: 'row-reverse', justifyContent: 'space-around', paddingVertical: 20, paddingTop: 10 },
+    summaryContainer: { flexDirection: isRTL ? 'row-reverse' : 'row', justifyContent: 'space-around', paddingVertical: 20, paddingTop: 10 },
     summaryBox: { alignItems: 'center', flex:1 },
     summaryValue: { fontSize: 32, fontWeight: 'bold', color: theme.mainText, fontVariant: ['tabular-nums'] },
     summaryLabel: { fontSize: 14, color: theme.secondaryText, marginTop: 4, textAlign:'center' },
-    graphContainer: { flexDirection: 'row-reverse', paddingHorizontal: 15, paddingTop: 10, paddingBottom: 10, minHeight: 220 },
-    yAxis: { width: 35, justifyContent: 'space-between', alignItems: 'flex-start', paddingLeft: 8, height: '100%', paddingBottom: 25 },
+    
+    // --- FIX IS HERE: FIXED HEIGHT ADDED ---
+    graphContainer: { 
+        flexDirection: isRTL ? 'row-reverse' : 'row', 
+        paddingHorizontal: 15, 
+        paddingTop: 10, 
+        paddingBottom: 10, 
+        height: 300,  // <--- FIXED HEIGHT
+        alignItems: 'stretch'
+    },
+    
+    yAxis: { width: 35, justifyContent: 'space-between', alignItems: 'flex-start', paddingLeft: isRTL ? 8 : 0, paddingRight: isRTL ? 0 : 8, height: '100%', paddingBottom: 25 },
     yAxisLabel: { fontSize: 11, color: theme.secondaryText, fontVariant: ['tabular-nums'] },
-    barsAreaWrapper: { flex: 1, marginRight: 5 },
+    barsAreaWrapper: { flex: 1, [isRTL ? 'marginRight' : 'marginLeft']: 5 },
     barsArea: { flex: 1, borderBottomWidth: 1, borderBottomColor: theme.graphLine, position: 'relative', marginBottom: 25 },
-    bars: { position: 'absolute', bottom: 0, left: 0, right: 0, top: 0, flexDirection: 'row-reverse', justifyContent: 'space-around', alignItems: 'flex-end' },
+    bars: { position: 'absolute', bottom: 0, left: 0, right: 0, top: 0, flexDirection: isRTL ? 'row-reverse' : 'row', justifyContent: 'space-around', alignItems: 'flex-end' },
     barWrapper: { width: `${100 / 7}%`, height: '100%', justifyContent: 'flex-end', alignItems: 'center', position: 'relative' },
     bar: { width: 14, borderTopLeftRadius: 7, borderTopRightRadius: 7 },
     achievedBar: { backgroundColor: theme.inactiveBar }, 
     activeBar: { backgroundColor: theme.activeBar },
     selectedBar: { backgroundColor: theme.selectedBar }, 
-    xAxis: { position: 'absolute', bottom: -25, left: 0, right: 0, height: 20, flexDirection: 'row-reverse', justifyContent: 'space-around', alignItems: 'center' },
+    xAxis: { position: 'absolute', bottom: -25, left: 0, right: 0, height: 20, flexDirection: isRTL ? 'row-reverse' : 'row', justifyContent: 'space-around', alignItems: 'center' },
     xAxisLabel: { fontSize: 12, color: theme.secondaryText, textAlign: 'center', flex: 1 },
     activeXAxisLabel: { fontWeight: 'bold', color: theme.activeDayLabelColor },
     tooltipPositioner: { position: 'absolute', alignItems: 'center', zIndex: 10, marginBottom: 5, left: '50%', transform: [{ translateX: -30 }] },
     tooltipContainer: { backgroundColor: theme.tooltipBg, borderRadius: 8, paddingVertical: 5, paddingHorizontal: 10, minWidth: 60, alignItems: 'center' },
     tooltipText: { color: theme.tooltipText, fontSize: 12, fontWeight: 'bold' },
     tooltipPointer: { width: 0, height: 0, borderLeftWidth: 6, borderRightWidth: 6, borderTopWidth: 6, borderStyle: 'solid', backgroundColor: 'transparent', borderLeftColor: 'transparent', borderRightColor: 'transparent', borderTopColor: theme.tooltipBg, marginTop: -1 },
-    summaryHeaderTitle: { fontSize: 18, fontWeight: 'bold', color: theme.headerTitle, marginBottom: 15, width: '100%', textAlign: 'right' },
+    summaryHeaderTitle: { fontSize: 18, fontWeight: 'bold', color: theme.headerTitle, marginBottom: 15, width: '100%', textAlign: isRTL ? 'right' : 'left' },
     summaryMainCard: { backgroundColor: theme.cardBackground, borderRadius: 15, padding: 20, width: '100%', marginBottom: 20 },
-    summaryStatRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', width: '100%' },
+    summaryStatRow: { flexDirection: isRTL ? 'row-reverse' : 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' },
     summaryStatLabel: { fontSize: 16, color: theme.secondaryText },
     summaryStatValue: { fontSize: 18, fontWeight: 'bold', color: theme.mainText, fontVariant: ['tabular-nums'] },
     divider: { height: 1, backgroundColor: theme.separator, marginVertical: 15 },
-    metricsCard: { backgroundColor: theme.cardBackground, borderRadius: 15, paddingVertical: 20, width: '100%', flexDirection: 'row-reverse', justifyContent: 'space-around', alignItems: 'center' },
+    metricsCard: { backgroundColor: theme.cardBackground, borderRadius: 15, paddingVertical: 20, width: '100%', flexDirection: isRTL ? 'row-reverse' : 'row', justifyContent: 'space-around', alignItems: 'center' },
     metricBlock: { alignItems: 'center', flex: 1 },
     metricIconCircle: { 
         backgroundColor: theme.iconCircleBg, 

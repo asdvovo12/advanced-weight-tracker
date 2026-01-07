@@ -200,7 +200,7 @@ const PremiumScreen = ({ language: propLanguage, darkMode: propDarkMode }) => {
   // Animation Logic
   useEffect(() => { isTrialActiveRef.current = useTrial; }, [useTrial]);
   const runAnimation = () => {
-    shimmerTranslateX.setValue(-150);
+    shimmerTranslateX.setValue(-230);
     Animated.timing(shimmerTranslateX, {
       toValue: screenWidth, duration: 1500, useNativeDriver: true,
     }).start(({ finished }) => {
@@ -348,7 +348,7 @@ const PremiumScreen = ({ language: propLanguage, darkMode: propDarkMode }) => {
         <View style={styles.headerContainer}>
           <TouchableOpacity style={styles.backButton} onPress={handleCloseOrBack}>
             <Ionicons 
-              name={route.params?.fromLogin ? 'close' : (I18nManager.isRTL ? 'arrow-forward' : 'arrow-back')} 
+              name={route.params?.fromLogin ? 'close' : (I18nManager.isRTL ? 'arrow-back' : 'arrow-forward')} 
               size={route.params?.fromLogin ? 30 : 28}
               color={styles.headerTitle.color} 
             />
@@ -391,12 +391,20 @@ const PremiumScreen = ({ language: propLanguage, darkMode: propDarkMode }) => {
         </View>
         
         <TouchableOpacity style={styles.upgradeButton} onPress={handlePurchase} disabled={isLoading}>
-          {useTrial && (
+{useTrial && (
             <AnimatedLinearGradient
-              colors={['transparent', theme.shimmerEffectColor, 'transparent']}
-              start={{ x: 0, y: 0.5 }}
+              colors={['transparent', 'rgba(255,255,255,0.4)', 'transparent']} 
+              start={{ x: 0, y: 0.3 }}
               end={{ x: 1, y: 0.5 }}
-              style={[ styles.shimmerEffect, { transform: [{ translateX: shimmerTranslateX }] }]} 
+              style={[
+                styles.shimmerEffect,
+                {
+                  transform: [
+                    { translateX: shimmerTranslateX }, // دي الحركة يمين وشمال
+                    { rotate: '110deg' } // <--- هي دي!! غيرنا الرقم عشان تميل زي ما أنت عايز
+                  ]
+                }
+              ]} 
             />
           )}
           {isLoading ? (
@@ -469,7 +477,7 @@ const getStyles = (themeMode) => {
     bestValueBadge: { position: 'absolute', top: -14, backgroundColor: theme.primary, borderRadius: 15, paddingHorizontal: 10, paddingVertical: 4 },
     bestValueText: { color: theme.bestValueText, fontWeight: 'bold', fontSize: 12 },
     upgradeButton: { width: '100%', backgroundColor: theme.primary, padding: 18, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginTop: 30, overflow: 'hidden' },
-    shimmerEffect: { position: 'absolute', top: 0, left: 0, height: '100%', width: 150, transform: [{ skewX: '-20deg' }] },
+    shimmerEffect: { position: 'absolute', top: 0, left: 0, height: '260%', width: 150, transform: [{ skewX: '-20deg' }] },
     upgradeButtonText: { color: theme.primaryText, fontSize: 18, fontWeight: 'bold' },
     trialContainer: { width: '100%', flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'center', marginTop: 20 },
     trialText: { fontSize: 16, color: theme.text, marginHorizontal: 10 },

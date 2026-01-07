@@ -11,7 +11,6 @@ import { supabase } from './supabaseClient';
 
 WebBrowser.maybeCompleteAuthSession();
 
-// --- Theme and Translation ---
 const lightTheme = {
   background: '#f5f5f5',
   contentBackground: '#fff',
@@ -154,39 +153,27 @@ const SignUpScreen = ({ language = 'ar', isDarkMode = false }) => {
         if (isFocused) { setActiveTab('SignUp'); }
     }, [isFocused, language]);
 
-    // --- Listener لمراقبة الدخول ومعالجة الرابط ---
     useEffect(() => {
         const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
             if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
                 console.log('✅ SignUp/Login detected! Navigating...');
-                
                 setIsGoogleLoading(false);
                 setIsFacebookLoading(false);
                 setIsLoading(false);
-                
                 navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'Weight' }] }));
             }
         });
 
-        // معالجة الرابط يدوياً للتأكد من التقاط التوكن
         const handleDeepLink = async (event) => {
             let url = event.url;
             if (url && url.includes('access_token') && url.includes('refresh_token')) {
                 try {
-                    console.log('🔗 Deep link received in SignUp');
                     const accessToken = url.match(/access_token=([^&]+)/)?.[1];
                     const refreshToken = url.match(/refresh_token=([^&]+)/)?.[1];
-
                     if (accessToken && refreshToken) {
-                        console.log('🔓 Tokens found! Setting session...');
-                        await supabase.auth.setSession({
-                            access_token: accessToken,
-                            refresh_token: refreshToken,
-                        });
+                        await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
                     }
-                } catch (err) {
-                    console.error("Error parsing URL:", err);
-                }
+                } catch (err) { console.error("Error parsing URL:", err); }
             }
         };
 
@@ -201,27 +188,21 @@ const SignUpScreen = ({ language = 'ar', isDarkMode = false }) => {
 
     const anyLoading = isLoading || isGoogleLoading || isFacebookLoading;
 
-    // --- دالة التسجيل عبر السوشيال ميديا (مع إضافة prompt) ---
     const handleSocialSignUp = async (provider) => {
         try {
             await supabase.auth.signOut();
             if (anyLoading) return;
-            
             if (provider === 'google') setIsGoogleLoading(true);
             if (provider === 'facebook') setIsFacebookLoading(true);
 
             const redirectUrl = Linking.createURL('/');
-            console.log('👉 Redirect URL:', redirectUrl);
             
             const { data, error } = await supabase.auth.signInWithOAuth({ 
               provider,
               options: {
                 redirectTo: redirectUrl,
                 skipBrowserRedirect: true,
-                // 👇👇 هذا السطر هو الحل لإظهار قائمة الايميلات 👇👇
-                queryParams: {
-                    prompt: 'select_account',
-                }
+                queryParams: { prompt: 'select_account' }
               }
             });
 
@@ -229,7 +210,6 @@ const SignUpScreen = ({ language = 'ar', isDarkMode = false }) => {
 
             if (data?.url) {
                 const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
-                
                 if (result.type !== 'success') {
                     if (provider === 'google') setIsGoogleLoading(false);
                     if (provider === 'facebook') setIsFacebookLoading(false);
@@ -239,7 +219,6 @@ const SignUpScreen = ({ language = 'ar', isDarkMode = false }) => {
         } catch (error) {
             console.error(`Unexpected ${provider} Sign-Up Error:`, error);
             Alert.alert(translation.errorTitle, error.message || translation.socialSignUpUnexpectedError.replace('{provider}', provider));
-            
             setIsGoogleLoading(false);
             setIsFacebookLoading(false);
         }
@@ -305,7 +284,8 @@ const SignUpScreen = ({ language = 'ar', isDarkMode = false }) => {
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}>
       <View style={styles.tabContainerWrapper}>
-        <View style={styles.tabContainer}>
+        {/* التبديل هنا */}
+        <View style={[styles.tabContainer, language === 'ar' && { flexDirection: 'row-reverse' }]}>
           <TouchableOpacity style={[ styles.tab, activeTab === 'Login' && styles.activeTab ]} onPress={() => handleTabPress('Login')} disabled={anyLoading}>
             <Text style={[ styles.tabText, activeTab === 'Login' && styles.activeTabText ]}>{translation.loginTab}</Text>
             {activeTab === 'Login' && <View style={styles.greenLine} />}
@@ -392,7 +372,7 @@ const getStyles = (theme) => StyleSheet.create({
     orText: { textAlign: 'center', marginVertical: 15, color: theme.placeholderText, fontSize: 14 },
     inputContainer: { flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: theme.inputBorder, marginBottom: 15, paddingBottom: 5 },
     inputIcon: { marginHorizontal: 12, width: 20, textAlign: 'center' },
-    input: { flex: 1, height: 40, fontSize: 16, color: theme.text, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+    input: { flex: 1, height: 40, fontSize: 16, color: theme.text, textAlign: I18nManager.isRTL ? 'left' : 'right' },
     eyeIcon: { paddingHorizontal: 10 },
     passwordRequirements: { marginVertical: 10, paddingHorizontal: 5, alignSelf: I18nManager.isRTL ? 'flex-end' : 'flex-start' },
     requirementText: { fontSize: 13, color: theme.invalid, marginBottom: 4, flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row', alignItems: 'center' },

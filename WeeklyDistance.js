@@ -1,9 +1,15 @@
-﻿// WeeklyDistance.js (FINAL, FINAL CORRECTED CODE)
+﻿// WeeklyDistance.js (Fixed Layout & Infinite Scroll)
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
-  SafeAreaView, View, Text, StyleSheet, ScrollView, Pressable,
-  I18nManager, TouchableOpacity, ActivityIndicator
+  View, // Changed from SafeAreaView
+  Text, 
+  StyleSheet, 
+  ScrollView, 
+  Pressable,
+  I18nManager, 
+  TouchableOpacity, 
+  ActivityIndicator
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -37,13 +43,13 @@ const WeeklyChart = ({ styles, chartData, totalDistance, averageDistance, dateRa
 
     const GoBackButton = (
         <TouchableOpacity onPress={onPreviousWeek}>
-            <Icon name="chevron-forward-outline" size={24} color={styles.chevron.color} />
+            <Icon name="chevron-back-outline" size={24} color={styles.chevron.color} />
         </TouchableOpacity>
     );
 
     const GoForwardButton = (
         <TouchableOpacity onPress={onNextWeek} disabled={isNextWeekDisabled}>
-            <Icon name="chevron-back-outline" size={24} color={isNextWeekDisabled ? styles.disabledChevron.color : styles.chevron.color} />
+            <Icon name="chevron-forward-outline" size={24} color={isNextWeekDisabled ? styles.disabledChevron.color : styles.chevron.color} />
         </TouchableOpacity>
     );
 
@@ -146,18 +152,13 @@ const WeeklyDistance = ({ language = 'ar', isDarkMode = false }) => {
               else trend = translation.trendStable;
           }
 
-          // ======================== تعديل مطلوب: START ========================
           let mostActiveTime = translation.noData;
           const maxDistance = Math.max(...currentDistances);
           if (maxDistance > 0) {
-            // نجد index اليوم الأكثر نشاطاً في مصفوفة الأسبوع (0-6)
             const mostActiveDayIndex = currentDistances.indexOf(maxDistance);
-            // نحصل على التاريخ الفعلي لهذا اليوم بإضافة index إلى تاريخ بداية الأسبوع
             const mostActiveDate = addDays(startOfWeek, mostActiveDayIndex);
-            // نقوم بتنسيق التاريخ لعرض (اسم اليوم، رقم اليوم، اسم الشهر)
             mostActiveTime = new Intl.DateTimeFormat(locale, { weekday: 'long', day: 'numeric', month: 'long' }).format(mostActiveDate);
           }
-          // ======================== تعديل مطلوب: END ==========================
           
           const today = new Date(); let todayIndex = -1;
           if (weekOffset === 0) { const jsDayIndex = today.getUTCDay(); todayIndex = (jsDayIndex - startOfWeekDay + 7) % 7; }
@@ -178,16 +179,16 @@ const WeeklyDistance = ({ language = 'ar', isDarkMode = false }) => {
   const handleNextWeek = () => setWeekOffset(prev => (prev > 0 ? prev - 1 : 0));
 
   if (isLoading) {
-    return ( <SafeAreaView style={styles.safeArea}><ActivityIndicator size="large" color={theme.mainText} style={{ flex: 1 }} /></SafeAreaView> );
+    return ( <View style={styles.safeArea}><ActivityIndicator size="large" color={theme.mainText} style={{ flex: 1 }} /></View> );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.mainContainer}>
         <WeeklyChart styles={styles} chartData={weeklyData.chartData} totalDistance={weeklyData.totalKm} averageDistance={weeklyData.averageKm} dateRange={weeklyData.dateRange} onPreviousWeek={handlePreviousWeek} onNextWeek={handleNextWeek} isNextWeekDisabled={weekOffset === 0} todayIndex={weeklyData.todayIndex} translation={translation} />
         <ActivitySummary styles={styles} totalKm={weeklyData.totalKm} totalSteps={weeklyData.totalSteps} totalCalories={weeklyData.totalCalories} totalHours={weeklyData.totalHours} trend={weeklyData.trend} mostActiveTime={weeklyData.mostActiveTime} translation={translation} />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -205,7 +206,17 @@ const getStyles = (theme, isRTL) => StyleSheet.create({
     summaryBox: { alignItems: 'center', flex:1 },
     summaryValue: { fontSize: 32, fontWeight: 'bold', color: theme.mainText, fontVariant: ['tabular-nums'] },
     summaryLabel: { fontSize: 14, color: theme.secondaryText, marginTop: 4, textAlign:'center' },
-    graphContainer: { flexDirection: isRTL ? 'row-reverse' : 'row', paddingHorizontal: 15, paddingTop: 10, paddingBottom: 10, minHeight: 220 },
+    
+    // --- FIX IS HERE: Fixed Height prevents infinite scrolling ---
+    graphContainer: { 
+        flexDirection: isRTL ? 'row-reverse' : 'row', 
+        paddingHorizontal: 15, 
+        paddingTop: 10, 
+        paddingBottom: 10, 
+        height: 300, // Fixed height added here
+        alignItems: 'stretch'
+    },
+    
     yAxis: { width: 35, justifyContent: 'space-between', alignItems: 'flex-start', paddingLeft: isRTL ? 8 : 0, paddingRight: isRTL ? 0 : 8, height: '100%', paddingBottom: 25 },
     yAxisLabel: { fontSize: 11, color: theme.secondaryText, fontVariant: ['tabular-nums'] },
     barsAreaWrapper: { flex: 1, [isRTL ? 'marginRight' : 'marginLeft']: 5 },

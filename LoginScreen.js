@@ -10,7 +10,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 
-// مهم جداً عشان المتصفح يقفل لما يرجع
 WebBrowser.maybeCompleteAuthSession();
 
 // --- Theme and Translation ---
@@ -99,7 +98,6 @@ const LoginScreen = ({ language = 'ar', isDarkMode = false }) => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   
-  // حالات التحميل
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isFacebookLoading, setIsFacebookLoading] = useState(false);
@@ -111,7 +109,6 @@ const LoginScreen = ({ language = 'ar', isDarkMode = false }) => {
     if (isFocused) { setActiveTab('Login'); }
   }, [isFocused, language]);
 
-  // --- دالة المزامنة (تجهيز البيانات وحفظها محلياً) ---
   const syncUserData = async (userId, userEmail, userMetadata) => {
       let remoteProfile = null;
       try {
@@ -158,43 +155,31 @@ const LoginScreen = ({ language = 'ar', isDarkMode = false }) => {
       }
   };
 
-  // --- Listener: مراقبة حالة الدخول (سواء إيميل أو سوشيال) ---
   useEffect(() => {
       const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
           if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
               console.log('✅ Login detected! Navigating immediately...');
-              
-              // 1. وقف التحميل فوراً عشان الـ Spinner يختفي
               setIsGoogleLoading(false);
               setIsFacebookLoading(false);
               setIsLoading(false);
-
-              // 2. انقل المستخدم لصفحة الوزن فوراً (من غير ما تستنى البيانات)
               navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'Weight' }] }));
-
-              // 3. ابدأ مزامنة البيانات في الخلفية (شيلنا كلمة await)
               syncUserData(session.user.id, session.user.email, session.user.user_metadata)
                   .then(() => console.log('Data synced in background'))
                   .catch((err) => console.log('Sync error:', err));
           }
       });
 
-      // معالجة الرابط (Deep Link)
       const handleDeepLink = async (event) => {
         let url = event.url;
-        // لو الرابط فيه التوكنات، بنعمل السيشن يدوياً
         if (url && url.includes('access_token') && url.includes('refresh_token')) {
             try {
                 const accessToken = url.match(/access_token=([^&]+)/)?.[1];
                 const refreshToken = url.match(/refresh_token=([^&]+)/)?.[1];
-
                 if (accessToken && refreshToken) {
-                    console.log("🔓 Tokens found! Setting session...");
                     await supabase.auth.setSession({
                         access_token: accessToken,
                         refresh_token: refreshToken,
                     });
-                    // مش محتاجين نعمل Navigate هنا لأن الـ listener اللي فوق هيحس بالسيشن وينقلك
                 }
             } catch (err) {
                 console.error("Error parsing URL:", err);
@@ -216,18 +201,14 @@ const LoginScreen = ({ language = 'ar', isDarkMode = false }) => {
     if (tabName === 'SignUp') { navigation.navigate('SignUp'); }
   };
 
-  // تسجيل الدخول العادي
   const handleLogin = async () => {
     Keyboard.dismiss();
-    
     if (!email || !password) {
       return Alert.alert(translation.errorTitle, translation.errorEmptyFields);
     }
-
     setIsLoading(true);
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-
       if (error) {
         setIsLoading(false);
         if (error.message.includes('Email not confirmed')) {
@@ -244,54 +225,34 @@ const LoginScreen = ({ language = 'ar', isDarkMode = false }) => {
     }
   };
   
-  // تسجيل الدخول بالسوشيال ميديا
   const handleSocialLogin = async (provider) => {
-    // إيقاف أي جلسة سابقة
     await supabase.auth.signOut();
-    
     if (anyLoading) return;
-
     if (provider === 'google') setIsGoogleLoading(true);
     if (provider === 'facebook') setIsFacebookLoading(true);
 
     try {
-        // إنشاء رابط العودة
         const redirectUrl = Linking.createURL('/'); 
-        console.log('👉 Redirect URL:', redirectUrl);
-
         const { data, error } = await supabase.auth.signInWithOAuth({
             provider: provider,
             options: {
                 redirectTo: redirectUrl,
                 skipBrowserRedirect: true,
-                // 👇👇 ضيف الجزء ده عشان يجبره يفتح قائمة الايميلات 👇👇
-                queryParams: {
-                    prompt: 'select_account',
-                }
+                queryParams: { prompt: 'select_account' }
             },
         });
 
         if (error) throw error;
 
         if (data?.url) {
-            // فتح المتصفح
             const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
-            
-            // لو المتصفح اتقفل بنجاح (المستخدم سجل ورجع)
             if (result.type === 'success') {
-                console.log('🌍 Browser auth successful, checking session...');
-                // تشييك سريع لو السيشن لقطت
                 const { data: { session } } = await supabase.auth.getSession();
-                if (!session) {
-                    console.log('⏳ Waiting for auth listener...');
-                }
             } else {
-                // لو المستخدم قفل المتصفح بنفسه (Cancel)
                 if (provider === 'google') setIsGoogleLoading(false);
                 if (provider === 'facebook') setIsFacebookLoading(false);
             }
         }
-
     } catch (error) {
         console.error(error);
         Alert.alert(translation.errorTitle, error.message || translation.unexpectedError);
@@ -308,28 +269,31 @@ const LoginScreen = ({ language = 'ar', isDarkMode = false }) => {
   
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}>
+      {/* 
+        التصحيح تم هنا: 
+        كان في طبقتين View بنفس الاسم مما ضاعف المسافة. 
+        الآن طبقة واحدة فقط مثل صفحة الـ SignUp 
+      */}
       <View style={styles.tabContainerWrapper}>
-          <View style={styles.tabContainer}>
-              <TouchableOpacity style={[ styles.tab, activeTab === 'Login' && styles.activeTab ]} onPress={() => handleTabPress('Login')} disabled={anyLoading}>
-                  <Text style={[ styles.tabText, activeTab === 'Login' && styles.activeTabText ]}>{translation.loginTab}</Text>
-                  {activeTab === 'Login' && <View style={styles.greenLine} />}
-              </TouchableOpacity>
-              <TouchableOpacity style={[ styles.tab, activeTab === 'SignUp' && styles.activeTab ]} onPress={() => handleTabPress('SignUp')} disabled={anyLoading}>
-                  <Text style={[ styles.tabText, activeTab === 'SignUp' && styles.activeTabText ]}>{translation.signUpTab}</Text>
-                  {activeTab === 'SignUp' && <View style={styles.greenLine} />}
-              </TouchableOpacity>
-          </View>
+        <View style={[styles.tabContainer, language === 'ar' && { flexDirection: 'row-reverse' }]}>
+            <TouchableOpacity style={[ styles.tab, activeTab === 'Login' && styles.activeTab ]} onPress={() => handleTabPress('Login')} disabled={anyLoading}>
+                <Text style={[ styles.tabText, activeTab === 'Login' && styles.activeTabText ]}>{translation.loginTab}</Text>
+                {activeTab === 'Login' && <View style={styles.greenLine} />}
+            </TouchableOpacity>
+            <TouchableOpacity style={[ styles.tab, activeTab === 'SignUp' && styles.activeTab ]} onPress={() => handleTabPress('SignUp')} disabled={anyLoading}>
+                <Text style={[ styles.tabText, activeTab === 'SignUp' && styles.activeTabText ]}>{translation.signUpTab}</Text>
+                {activeTab === 'SignUp' && <View style={styles.greenLine} />}
+            </TouchableOpacity>
+        </View>
       </View>
+
       <ScrollView contentContainerStyle={styles.scrollContentContainer} keyboardShouldPersistTaps="handled">
         <View style={styles.content}>
-          
-          {/* زر فيسبوك */}
           <TouchableOpacity style={styles.socialButton} disabled={anyLoading} onPress={() => handleSocialLogin('facebook')}>
             {isFacebookLoading ? <ActivityIndicator size="small" color="#1877F2" style={styles.buttonIcon} /> : <FontAwesome name="facebook-square" size={24} color="#1877F2" style={styles.buttonIcon} />}
             <Text style={styles.socialButtonText}>{translation.loginWithFacebook}</Text>
           </TouchableOpacity>
 
-          {/* زر جوجل */}
           <TouchableOpacity style={styles.socialButton} disabled={anyLoading} onPress={() => handleSocialLogin('google')}>
             {isGoogleLoading ? <ActivityIndicator size="small" color={theme.iconColor} style={styles.buttonIcon} /> : <Image source={require('./assets/google.png')} style={styles.googleLogo} />}
             <Text style={styles.socialButtonText}>{translation.loginWithGoogle}</Text>
@@ -381,7 +345,7 @@ const getStyles = (theme) => StyleSheet.create({
     orText: { textAlign: 'center', marginVertical: 20, color: theme.placeholderText, fontSize: 14 },
     inputContainer: { flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: theme.inputBorder, marginBottom: 20, paddingBottom: 8 },
     inputIcon: { marginRight: 12 },
-    input: { flex: 1, height: 40, fontSize: 16, color: theme.text, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+    input: { flex: 1, height: 40, fontSize: 16, color: theme.text, textAlign: I18nManager.isRTL ? 'left' : 'right' },
     eyeIcon: { paddingLeft: 10 },
     forgotPasswordContainer: { alignItems: I18nManager.isRTL ? 'flex-start' : 'flex-end', marginBottom: 30 },
     forgotPasswordText: { color: theme.subtleText, fontSize: 14, fontWeight: '500' },

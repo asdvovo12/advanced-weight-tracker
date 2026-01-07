@@ -18,7 +18,7 @@ import MonthlySteps from './Monthlysteps';
 const { width, height } = Dimensions.get('window');
 const CIRCLE_SIZE = width * 0.60;
 const CIRCLE_BORDER_WIDTH = 15;
-const ICON_SIZE = 22; // حجم النقطة المتحركة
+const ICON_SIZE = 22; 
 const RUNNER_ICON_SIZE = 75;
 const SVG_VIEWBOX_SIZE = CIRCLE_SIZE;
 const PATH_RADIUS = (CIRCLE_SIZE / 2) - (CIRCLE_BORDER_WIDTH / 2);
@@ -325,30 +325,24 @@ const StepsScreen = (props) => {
         } catch (error) { console.error("Save daily steps fail:", error); } 
     }, []);
 
-    // >>>>>>> تعديل هنا: الشارت دلوقتي بيعتمد على selectedDate عشان يعرض أسبوع التاريخ اللي أنت واقف عليه <<<<<<<<
-useEffect(() => {
+    // تحديث بيانات الشارت اليومي
+    useEffect(() => {
         const updateChartData = async () => {
             const history = await getStoredStepsHistory();
             const todayStr = getDateString(new Date());
             history[todayStr] = currentSteps; 
 
-            // --- التعديل هنا ---
-            // شيل new Date() وحط بدالها selectedDate
-            // عشان يجيب أسبوع اليوم اللي أنت واقف عليه مش أسبوع النهاردة
             const start = getStartOfWeek(selectedDate, startOfWeekDay);
             
             const arr = [];
             for (let i = 0; i < 7; i++) {
                 const d = addDays(start, i);
                 const dStr = getDateString(d);
-                // هنا الكود بيقول لو ملقاش تاريخ مسجل حط صفر (ده اللي بيصفر الجدول)
                 arr.push(history[dStr] || 0);
             }
             setDailyChartData(arr);
         };
         updateChartData();
-        
-        // --- متنساش تضيف selectedDate هنا في الآخر ---
     }, [currentSteps, startOfWeekDay, getStoredStepsHistory, selectedDate]);
 
 
@@ -389,6 +383,103 @@ useEffect(() => {
         loadInitialData(); 
     }, [getStoredStepsHistory]);
 
+    // ============================================================
+    // 👇👇👇 الكود الذي تم إضافته لإصلاح مشكلة الرسم البياني الشهري 👇👇👇
+    // ============================================================
+    
+    // مراقبة تغيير حالة الشهر الحالي
+    useEffect(() => {
+        const now = new Date();
+        const startOfCurrentMonth = getStartOfMonth(now);
+        setIsCurrentMonthSelected(selectedMonthStart.getTime() === startOfCurrentMonth.getTime());
+    }, [selectedMonthStart]);
+
+    // مراقبة تغيير حالة الأسبوع الحالي
+    useEffect(() => {
+        setIsCurrentWeekSelected(isSameWeek(selectedWeekStart, new Date(), startOfWeekDay));
+    }, [selectedWeekStart, startOfWeekDay]);
+
+    // دالة جلب البيانات الشهرية والأسبوعية
+    useEffect(() => {
+        const fetchPeriodData = async () => {
+            const history = await getStoredStepsHistory();
+            const todayStr = getDateString(new Date());
+            history[todayStr] = currentSteps; // التأكد من وجود خطوات اليوم الحالية في السجل المؤقت
+
+            // --- التعامل مع بيانات الشهر ---
+            if (selectedPeriod === 'month') {
+                setIsMonthlyLoading(true);
+                try {
+                    // الشهر الحالي المختار
+                    const daysInMonth = getDaysInMonth(selectedMonthStart);
+                    const monthData = [];
+                    for (let i = 1; i <= daysInMonth; i++) {
+                        const d = new Date(selectedMonthStart);
+                        d.setUTCDate(i);
+                        const dateStr = getDateString(d);
+                        monthData.push(history[dateStr] || 0);
+                    }
+                    setCurrentMonthData(monthData);
+
+                    // الشهر السابق (للمقارنة)
+                    const prevMonthStart = addMonths(selectedMonthStart, -1);
+                    const daysInPrevMonth = getDaysInMonth(prevMonthStart);
+                    const prevMonthData = [];
+                    for (let i = 1; i <= daysInPrevMonth; i++) {
+                        const d = new Date(prevMonthStart);
+                        d.setUTCDate(i);
+                        const dateStr = getDateString(d);
+                        prevMonthData.push(history[dateStr] || 0);
+                    }
+                    setPreviousMonthDataForComparison(prevMonthData);
+
+                    // تحديث نص التاريخ
+                    const endOfMonth = new Date(selectedMonthStart);
+                    endOfMonth.setUTCDate(daysInMonth);
+                    setFormattedMonthRange(formatDateRange(selectedMonthStart, endOfMonth, language));
+                } catch (e) {
+                    console.error("Error fetching monthly data:", e);
+                } finally {
+                    setIsMonthlyLoading(false);
+                }
+            }
+
+            // --- التعامل مع بيانات الأسبوع (للتأكد) ---
+            if (selectedPeriod === 'week') {
+                setIsWeeklyLoading(true);
+                try {
+                    // الأسبوع الحالي المختار
+                    const weekData = [];
+                    for(let i=0; i<7; i++) {
+                        const d = addDays(selectedWeekStart, i);
+                        const dateStr = getDateString(d);
+                        weekData.push(history[dateStr] || 0);
+                    }
+                    setActualWeekData(weekData);
+
+                    // الأسبوع السابق (للمقارنة)
+                    const prevWeekStart = addDays(selectedWeekStart, -7);
+                    const prevWeekData = [];
+                     for(let i=0; i<7; i++) {
+                        const d = addDays(prevWeekStart, i);
+                        const dateStr = getDateString(d);
+                        prevWeekData.push(history[dateStr] || 0);
+                    }
+                    setPreviousWeekForComparisonData(prevWeekData);
+                } catch (e) {
+                    console.error("Error fetching weekly data:", e);
+                } finally {
+                    setIsWeeklyLoading(false);
+                }
+            }
+        };
+
+        fetchPeriodData();
+    }, [selectedPeriod, selectedMonthStart, selectedWeekStart, getStoredStepsHistory, language, currentSteps]);
+    // ============================================================
+    // 👆👆👆 نهاية الكود المضاف 👆👆👆
+    // ============================================================
+
     const animateDisplaySteps = useCallback((startValue, endValue) => { 
         if (startValue === endValue || isNaN(startValue) || isNaN(endValue)) { 
             setDisplaySteps(endValue); 
@@ -419,23 +510,18 @@ useEffect(() => {
 
     useEffect(() => {
         const updateDisplayForSelectedDate = async () => {
-            const dateString = getDateString(selectedDate); // تاريخ اليوم اللي انت واقف عليه كـ نص
-            const todayString = getDateString(new Date());  // تاريخ النهاردة الحقيقي كـ نص
+            const dateString = getDateString(selectedDate);
+            const todayString = getDateString(new Date());
             
             let stepsToShow = 0;
 
-            // 1. لو التاريخ اللي انت مختاره هو نفس تاريخ النهاردة (كنص)
             if (dateString === todayString) {
-                stepsToShow = currentSteps; // اعرض الخطوات الحالية من العداد
+                stepsToShow = currentSteps;
             } else {
-                // 2. لو تاريخ قديم، هات البيانات من الذاكرة
                 const history = await getStoredStepsHistory();
-                
-                // هنا التريك: لو لقينا خطوات للتاريخ ده اعرضها، لو ملقيناش اعرض 0
                 stepsToShow = history[dateString] || 0;
             }
 
-            // تحديث الرقم والأنيميشن
             setStepsForSelectedDay(stepsToShow);
             animateDisplaySteps(displayStepsRef.current, stepsToShow);
         };
@@ -468,8 +554,7 @@ useEffect(() => {
 
     const badgeProgressAngle = useMemo(() => { if (remainingDays <= 0 || currentChallengeDuration <= 0) return 359.999; if (remainingDays >= currentChallengeDuration) return 0; const daysCompleted = currentChallengeDuration - remainingDays; const angle = (daysCompleted / currentChallengeDuration) * 360; return Math.min(359.999, Math.max(0.01, angle || 0)); }, [remainingDays, currentChallengeDuration]);
     const badgeProgressPathD = useMemo(() => (badgeProgressAngle > 0.1 ? describeArc(BADGE_CENTER_X, BADGE_CENTER_Y, BADGE_PATH_RADIUS, 0.01, badgeProgressAngle) : ''), [badgeProgressAngle]);
-    const isCurrentWeekSelectedMemo = useMemo(() => isSameWeek(selectedWeekStart, new Date(), startOfWeekDay), [selectedWeekStart, startOfWeekDay]);
-    useEffect(() => { setIsCurrentWeekSelected(isCurrentWeekSelectedMemo); }, [isCurrentWeekSelectedMemo]);
+    
     const formattedWeekRange = useMemo(() => { const endDate = getEndOfWeek(selectedWeekStart, startOfWeekDay); return formatDateRange(selectedWeekStart, endDate, language); }, [selectedWeekStart, startOfWeekDay, language]);
     const weeklyStats = useMemo(() => { const calculateWeekMetrics = (weekDataArray) => { if (!Array.isArray(weekDataArray) || weekDataArray.length === 0) { return { total: 0, avg: 0, rawMinutes: 0, rawCals: 0, rawDist: 0, durationStr: language === 'ar' ? "٠٠:٠٠" : "00:00", calsStr: language === 'ar' ? "٠٫٠" : "0.0", distStr: language === 'ar' ? "٠٫٠٠" : "0.00" }; } const locale = language === 'ar' ? 'ar-EG' : 'en-US'; const validDaysData = weekDataArray.filter(s => typeof s === 'number' && s >= 0); const total = validDaysData.reduce((sum, steps) => sum + steps, 0); const daysWithData = validDaysData.length; const avg = daysWithData > 0 ? total / daysWithData : 0; const rawMinutes = total / STEPS_PER_MINUTE; const rawCals = total * CALORIES_PER_STEP; const rawDist = total * STEP_LENGTH_METERS / 1000; const hours = Math.floor(rawMinutes / 60); const mins = Math.floor(rawMinutes % 60); const durationStr = `${hours.toLocaleString(locale, { minimumIntegerDigits: 2 })}:${mins.toLocaleString(locale, { minimumIntegerDigits: 2 })}`; const calsStr = rawCals.toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 }); const distStr = rawDist.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); return { total, avg: Math.round(avg), rawMinutes, rawCals, rawDist, durationStr, calsStr, distStr }; }; const currentMetrics = calculateWeekMetrics(actualWeekData); const previousMetrics = calculateWeekMetrics(previousWeekForComparisonData); const locale = language === 'ar' ? 'ar-EG' : 'en-US'; const stepsDiff = currentMetrics.total - previousMetrics.total; const stepsChangeStr = `${stepsDiff >= 0 ? '+' : '−'}${Math.abs(stepsDiff).toLocaleString(locale)}`; return { totalSteps: currentMetrics.total, averageSteps: currentMetrics.avg, weeklyDuration: currentMetrics.durationStr, weeklyCalories: currentMetrics.calsStr, weeklyDistance: currentMetrics.distStr, stepsChange: stepsChangeStr, }; }, [actualWeekData, previousWeekForComparisonData, language]);
 

@@ -1,8 +1,14 @@
-﻿// WeeklyCaloriesScreen.js (نسخة قابلة للتحكم عبر Props مع سلوك الأسهم المطلوب)
+﻿// WeeklyCaloriesScreen.js (نسخة قابلة للتحكم عبر Props مع سلوك الأسهم المطلوب وإصلاح المشكلة الرسومية)
 import React, { useState, useMemo, useCallback } from 'react';
 import {
-  SafeAreaView, View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, I18nManager, ActivityIndicator, Pressable
+  View, // تم التغيير من SafeAreaView
+  Text, 
+  StyleSheet, 
+  ScrollView,
+  TouchableOpacity, 
+  I18nManager, 
+  ActivityIndicator, 
+  Pressable
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -227,7 +233,7 @@ const WeeklyCaloriesScreen = ({ language = 'ar', isDarkMode = false }) => {
     const isNextWeekDisabled = useMemo(() => { const currentWeekStart = getStartOfWeek(new Date(), language); const viewedWeekStart = getStartOfWeek(viewedDate, language); return viewedWeekStart.getTime() >= currentWeekStart.getTime(); }, [viewedDate, language]);
     const dateRange = useMemo(() => { if (weeklyData.length < 7) return ''; const locale = language === 'ar' ? 'ar-EG' : 'en-US'; const options = { month: 'long', day: 'numeric' }; const startDate = weeklyData[0].date; const endDate = weeklyData[6].date; const formattedStart = startDate.toLocaleDateString(locale, options); const formattedEnd = endDate.toLocaleDateString(locale, options); return `${formatNumber(formattedStart, language)} - ${formatNumber(formattedEnd, language)}`; }, [weeklyData, language]);
     return (
-        <SafeAreaView style={styles.safeArea}>
+        <View style={styles.safeArea}>
              <View style={styles.headerContainer}>
                 <Text style={styles.headerTitle}>{lang.headerTitle}</Text>
             </View>
@@ -240,7 +246,7 @@ const WeeklyCaloriesScreen = ({ language = 'ar', isDarkMode = false }) => {
                 </>
             ) : ( <View style={styles.centerSpinner}><Text style={styles.loadingText}>{lang.noData}</Text></View> )}
             </ScrollView>
-        </SafeAreaView>
+        </View>
     );
 };
 
@@ -267,7 +273,17 @@ const getStyles = (theme, language) => StyleSheet.create({
     summaryBox: { alignItems: 'center', flex: 1 },
     summaryValue: { fontSize: 32, fontWeight: 'bold', color: theme.mainText, fontVariant: ['tabular-nums'] },
     summaryLabel: { fontSize: 14, color: theme.secondaryText, marginTop: 4, textAlign: 'center' },
-    graphContainer: { flexDirection: language === 'ar' ? 'row-reverse' : 'row', paddingHorizontal: 15, paddingTop: 10, paddingBottom: 10, minHeight: 220 },
+    
+    // --- FIX IS HERE: FIXED HEIGHT ADDED ---
+    graphContainer: { 
+        flexDirection: language === 'ar' ? 'row-reverse' : 'row', 
+        paddingHorizontal: 15, 
+        paddingTop: 10, 
+        paddingBottom: 10, 
+        height: 300, // <--- FIXED HEIGHT
+        alignItems: 'stretch'
+    },
+    
     yAxis: { width: 35, justifyContent: 'space-between', paddingLeft: language === 'ar' ? 8 : 0, paddingRight: language === 'ar' ? 0 : 8, height: '100%', paddingBottom: 25, alignItems: language === 'ar' ? 'flex-start' : 'flex-end' },
     yAxisLabel: { fontSize: 11, color: theme.secondaryText, fontVariant: ['tabular-nums'] },
     barsAreaWrapper: { flex: 1, marginHorizontal: 5 },

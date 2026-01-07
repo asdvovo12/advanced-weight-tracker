@@ -119,7 +119,7 @@ const MonthlySteps = ({
     previousMonthData = [],
     isLoading = false,
     formattedDateRange = "...",
-    monthStartDate, // <-- The new, reliable prop
+    monthStartDate,
     onPreviousMonth,
     onNextMonth,
     isCurrentMonth = false,
@@ -149,12 +149,16 @@ const MonthlySteps = ({
     const [selectedBarValue, setSelectedBarValue] = useState(null);
 
     useEffect(() => {
-        const dataAvailable = !isLoading && Array.isArray(monthlyData) && monthlyData.length > 0;
+        // --- تصحيح: إضافة تحقق إضافي للبيانات ---
+        const hasData = Array.isArray(monthlyData) && monthlyData.length > 0;
+        const totalCheck = hasData ? monthlyData.reduce((a, b) => a + b, 0) : 0;
+        const dataAvailable = !isLoading && hasData && totalCheck >= 0;
 
-        if (!dataAvailable) {
+        if (!dataAvailable && totalCheck === 0) {
             setTotalSteps(0); setAverageSteps(0);
             setStepsChange(`+${formatNumber(0, effectiveLang)}`);
-            setTrendText(t.loadingCalculating); setActiveTimeText(t.loadingCalculating);
+            setTrendText(t.activeTimeInsufficient); 
+            setActiveTimeText(t.activeTimeNoPeak);
             setTimeValue(formatDuration(0, effectiveLang)); setTimeChange(`+${formatNumber(0, effectiveLang)}`);
             setDistanceValue(formatNumber(0, effectiveLang, { minimumFractionDigits: 2 }));
             setDistanceChange(`+${formatNumber(0, effectiveLang, { minimumFractionDigits: 2 })}`);
@@ -210,9 +214,6 @@ const MonthlySteps = ({
         }
         setTrendText(trendTextValue);
         
-        // =================================================================
-        // <<< START OF FIX: Calculate and format the most active day using the reliable prop >>>
-        // =================================================================
         let activeTimeTextValue = t.activeTimeInsufficient;
         const maxStepsInMonth = Math.max(...currentData.map(d => d || 0));
 
@@ -233,9 +234,6 @@ const MonthlySteps = ({
             }
         }
         setActiveTimeText(activeTimeTextValue);
-        // =================================================================
-        // <<< END OF FIX >>>
-        // =================================================================
 
         setTotalSteps(currentTotal);
         setAverageSteps(currentAvg);
@@ -327,11 +325,11 @@ const MonthlySteps = ({
                 <View style={S.topSectionInsideCard}>
                      <View style={S.dateNavigator}>
                          <TouchableOpacity onPress={onNextMonth} disabled={isLoading || isCurrentMonth}>
-                            <Icon name="chevron-left" size={28} color={isLoading || isCurrentMonth ? theme.disabledColor : theme.secondaryText} />
+                            <Icon name="chevron-right" size={28} color={isLoading || isCurrentMonth ? theme.disabledColor : theme.secondaryText} />
                          </TouchableOpacity>
                          <Text style={S.dateText}>{displayDateRange}</Text>
                          <TouchableOpacity onPress={onPreviousMonth} disabled={isLoading}>
-                            <Icon name="chevron-right" size={28} color={isLoading ? theme.disabledColor : theme.secondaryText} />
+                            <Icon name="chevron-left" size={28} color={isLoading ? theme.disabledColor : theme.secondaryText} />
                          </TouchableOpacity>
                      </View>
                      <View style={S.cardSeparator} />
@@ -347,6 +345,7 @@ const MonthlySteps = ({
                      </View>
                 </View>
 
+                {/* --- FIX IS HERE: FIXED HEIGHT ADDED IN STYLES --- */}
                 <View style={S.graphContainerInsideCard}>
                     <View style={S.yAxis}>
                         {yAxisLabels.slice().reverse().map((label, index) =>
@@ -491,10 +490,17 @@ const styles = (theme) => StyleSheet.create({
         fontSize: 14, color: theme.secondaryText, marginTop: 4,
         fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
     },
+    
+    // --- IMPORTANT FIX: Fixed Height is applied here ---
     graphContainerInsideCard: {
-        flexDirection: 'row',
-        paddingHorizontal: 15, paddingTop: 30, minHeight: 200, paddingBottom: 10,
+        flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row', // Ensures correct graph direction
+        paddingHorizontal: 15, 
+        paddingTop: 30, 
+        height: 300,  // <--- FIXED HEIGHT PREVENTS INFINITE SCROLL BUG
+        paddingBottom: 10,
+        alignItems: 'stretch'
     },
+    
     yAxis: {
         justifyContent: 'space-between',
         alignItems: 'flex-end',
@@ -508,6 +514,7 @@ const styles = (theme) => StyleSheet.create({
     barsAreaWrapper: {
         flex: 1,
         marginLeft: 5,
+        height: '100%' // Ensure it takes the full fixed height
     },
     barsArea: {
         flex: 1, position: 'relative',

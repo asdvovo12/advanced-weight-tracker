@@ -1,8 +1,15 @@
-﻿// MonthlyCaloriesScreen.js (نسخة قابلة للتحكم عبر Props مع تنسيق التاريخ المطلوب)
+﻿// MonthlyCaloriesScreen.js (Fixed Layout & Infinite Scroll)
+
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
-  SafeAreaView, View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, I18nManager, ActivityIndicator, Pressable,
+  View, // Changed from SafeAreaView
+  Text, 
+  StyleSheet, 
+  ScrollView,
+  TouchableOpacity, 
+  I18nManager, 
+  ActivityIndicator, 
+  Pressable,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -102,13 +109,13 @@ const MonthlyChart = ({ aggregatedData, dateRange, total, average, styles, lang,
     
     const PrevMonthButton = () => (
         <TouchableOpacity onPress={onPrev}>
-            <Icon name="chevron-forward-outline" size={24} color={styles.arrowColor.color} />
+            <Icon name="chevron-back-outline" size={24} color={styles.arrowColor.color} />
         </TouchableOpacity>
     );
 
     const NextMonthButton = () => (
         <TouchableOpacity onPress={onNext} disabled={isNextDisabled}>
-            <Icon name="chevron-back-outline" size={24} color={isNextDisabled ? styles.arrowDisabled.color : styles.arrowColor.color} />
+            <Icon name="chevron-forward-outline" size={24} color={isNextDisabled ? styles.arrowDisabled.color : styles.arrowColor.color} />
         </TouchableOpacity>
     );
 
@@ -298,10 +305,10 @@ const MonthlyCaloriesScreen = ({ language = 'ar', isDarkMode = false }) => {
         return `${formattedStart} - ${formattedEnd}`;
     }, [viewedMonth, language]);
 
-    if (isLoading || !statsForMonth) { return <SafeAreaView style={styles.safeArea}><View style={styles.loadingContainer}><ActivityIndicator size="large" color={theme.mainText} /></View></SafeAreaView>; }
+    if (isLoading || !statsForMonth) { return <View style={styles.safeArea}><View style={styles.loadingContainer}><ActivityIndicator size="large" color={theme.mainText} /></View></View>; }
     
     return (
-        <SafeAreaView style={styles.safeArea}>
+        <View style={styles.safeArea}>
              <View style={styles.headerContainer}>
                 <Text style={styles.headerTitle}>{lang.headerTitle}</Text>
             </View>
@@ -328,7 +335,7 @@ const MonthlyCaloriesScreen = ({ language = 'ar', isDarkMode = false }) => {
                     language={language}
                 />
             </ScrollView>
-        </SafeAreaView>
+        </View>
     );
 };
 
@@ -350,7 +357,17 @@ const getStyles = (theme, language) => StyleSheet.create({
     summaryBox: { alignItems: 'center', flex:1 },
     summaryValue: { fontSize: 32, fontWeight: 'bold', color: theme.mainText, fontVariant: ['tabular-nums'] },
     summaryLabel: { fontSize: 14, color: theme.secondaryText, marginTop: 4, textAlign:'center' },
-    graphContainer: { flexDirection: language === 'ar' ? 'row-reverse' : 'row', paddingHorizontal: 15, paddingTop: 10, paddingBottom: 10, minHeight: 220 },
+    
+    // --- FIX IS HERE: FIXED HEIGHT ADDED ---
+    graphContainer: { 
+        flexDirection: language === 'ar' ? 'row-reverse' : 'row', 
+        paddingHorizontal: 15, 
+        paddingTop: 10, 
+        paddingBottom: 10, 
+        height: 300, // <--- FIXED HEIGHT
+        alignItems: 'stretch'
+    },
+    
     yAxis: { width: 35, justifyContent: 'space-between', paddingLeft: language === 'ar' ? 8 : 0, paddingRight: language === 'ar' ? 0 : 8, height: '100%', paddingBottom: 25, alignItems: language === 'ar' ? 'flex-start' : 'flex-end' },
     yAxisLabel: { fontSize: 11, color: theme.secondaryText },
     barsAreaWrapper: { flex: 1, marginHorizontal: language === 'ar' ? 5 : 0, marginLeft: language === 'ar' ? 0 : 5 },

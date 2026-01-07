@@ -1,9 +1,15 @@
-﻿// MonthlyDistance.js (Corrected with Date Range and Arrow Logic)
+﻿// MonthlyDistance.js (Fixed Layout and Infinite Scroll Issue)
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
-  SafeAreaView, View, Text, StyleSheet, ScrollView, Pressable,
-  I18nManager, TouchableOpacity, ActivityIndicator
+  View, // Changed from SafeAreaView
+  Text, 
+  StyleSheet, 
+  ScrollView, 
+  Pressable,
+  I18nManager, 
+  TouchableOpacity, 
+  ActivityIndicator
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -18,8 +24,6 @@ const translations = { ar: { kmUnit: 'كم', dailyAverage: 'متوسط يومي'
 const CALORIES_PER_STEP = 0.04; const STEP_LENGTH_METERS = 0.762; const STEPS_PER_MINUTE = 100;
 const DAILY_DISTANCE_HISTORY_KEY = '@DistanceScreen:DailyHistory';
 const getDateString = (date) => { if (!date || !(date instanceof Date)) return null; return new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())).toISOString().slice(0, 10); };
-// --- End of Constants & Helpers ---
-
 
 // =================================================================
 // Sub-components
@@ -44,13 +48,13 @@ const MonthlyChart = ({ styles, weeklyAggregates, totalDistance, averageDistance
 
     const GoBackButton = (
         <TouchableOpacity onPress={onPreviousMonth}>
-            <Icon name="chevron-forward-outline" size={24} color={styles.chevron.color} />
+            <Icon name="chevron-back-outline" size={24} color={styles.chevron.color} />
         </TouchableOpacity>
     );
 
     const GoForwardButton = (
         <TouchableOpacity onPress={onNextMonth} disabled={isNextMonthDisabled}>
-            <Icon name="chevron-back-outline" size={24} color={isNextMonthDisabled ? styles.disabledChevron.color : styles.chevron.color} />
+            <Icon name="chevron-forward-outline" size={24} color={isNextMonthDisabled ? styles.disabledChevron.color : styles.chevron.color} />
         </TouchableOpacity>
     );
 
@@ -189,13 +193,8 @@ const MonthlyDistance = ({ language = 'ar', isDarkMode = false }) => {
                     const mostActiveDayIndex = distances.indexOf(maxDistance); 
                     const mostActiveDate = new Date(Date.UTC(year, month, mostActiveDayIndex + 1)); 
 
-                    // ======================== تعديل مطلوب: START ========================
-                    // السطر القديم
-                    // mostActiveTime = mostActiveDate.toLocaleDateString(locale, { day: 'numeric', month: 'long' });
-
-                    // السطر الجديد والمحسن بنفس طريقة الكود الثاني
+                    // --- FORMATTING LOGIC FOR MOST ACTIVE DAY ---
                     mostActiveTime = new Intl.DateTimeFormat(locale, { weekday: 'long', day: 'numeric', month: 'long' }).format(mostActiveDate);
-                    // ======================== تعديل مطلوب: END ========================
                 }
                 
                 setMonthlyData({ weeklyAggregates, totalKm, averageKm, totalSteps, totalCalories, totalHours, dateRange, trend, mostActiveTime });
@@ -214,16 +213,16 @@ const MonthlyDistance = ({ language = 'ar', isDarkMode = false }) => {
   const handleNextMonth = () => setMonthOffset(prev => (prev > 0 ? prev - 1 : 0));
 
   if (isLoading) {
-    return ( <SafeAreaView style={styles.safeArea}><ActivityIndicator size="large" color={theme.mainText} style={{ flex: 1 }} /></SafeAreaView> );
+    return ( <View style={styles.safeArea}><ActivityIndicator size="large" color={theme.mainText} style={{ flex: 1 }} /></View> );
   }
 
   return ( 
-    <SafeAreaView style={styles.safeArea}> 
+    <View style={styles.safeArea}> 
         <ScrollView contentContainerStyle={styles.mainContainer}> 
             <MonthlyChart styles={styles} weeklyAggregates={monthlyData.weeklyAggregates} totalDistance={monthlyData.totalKm} averageDistance={monthlyData.averageKm} dateRange={monthlyData.dateRange} onPreviousMonth={handlePreviousMonth} onNextMonth={handleNextMonth} isNextMonthDisabled={monthOffset === 0} translation={translation}/> 
             <ActivitySummary styles={styles} totalKm={monthlyData.totalKm} totalSteps={monthlyData.totalSteps} totalCalories={monthlyData.totalCalories} totalHours={monthlyData.totalHours} trend={monthlyData.trend} mostActiveTime={monthlyData.mostActiveTime} translation={translation} /> 
         </ScrollView> 
-    </SafeAreaView> 
+    </View> 
   );
 };
 
@@ -242,8 +241,18 @@ const getStyles = (theme, isRTL) => StyleSheet.create({
     summaryBox: { alignItems: 'center', flex:1 },
     summaryValue: { fontSize: 32, fontWeight: 'bold', color: theme.mainText, fontVariant: ['tabular-nums'] },
     summaryLabel: { fontSize: 14, color: theme.secondaryText, marginTop: 4, textAlign:'center' },
-    graphContainer: { flexDirection: isRTL ? 'row-reverse' : 'row', paddingHorizontal: 15, paddingTop: 10, paddingBottom: 10, minHeight: 220 },
-    yAxis: { width: 35, justifyContent: 'space-between', alignItems: 'flex-start', paddingLeft: isRTL ? 8 : 0, paddingRight: isRTL ? 0 : 8, height: '100%', paddingBottom: 25, position: 'relative' },
+    
+    // --- FIX IS HERE: Fixed Height prevents infinite scrolling ---
+    graphContainer: { 
+        flexDirection: isRTL ? 'row-reverse' : 'row', 
+        paddingHorizontal: 15, 
+        paddingTop: 10, 
+        paddingBottom: 10, 
+        height: 300, // Fixed height added here
+        alignItems: 'stretch'
+    },
+    
+    yAxis: { width: 35, justifyContent: 'space-between', alignItems: 'flex-end', paddingLeft: isRTL ? 8 : 0, paddingRight: isRTL ? 0 : 8, height: '100%', paddingBottom: 25, position: 'relative' },
     yAxisLabel: { fontSize: 11, color: theme.secondaryText, fontVariant: ['tabular-nums'] },
     barsAreaWrapper: { flex: 1, [isRTL ? 'marginRight' : 'marginLeft']: 5 },
     barsArea: { flex: 1, borderBottomWidth: 1, borderBottomColor: theme.graphLine, position: 'relative', marginBottom: 25 },

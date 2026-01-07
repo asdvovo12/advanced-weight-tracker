@@ -1,7 +1,6 @@
 ﻿import React, { useState, useMemo } from 'react';
 import {
-    SafeAreaView,
-    View,
+    View, // تم التغيير من SafeAreaView
     Text,
     StyleSheet,
     ScrollView,
@@ -13,7 +12,7 @@ import {
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
-// --- Helper Functions (Global) ---
+// --- Helper Functions ---
 const formatNumber = (num, lang, options = {}) => {
     const locale = lang === 'ar' ? 'ar-EG' : 'en-US';
     if (typeof num !== 'number' || isNaN(num)) {
@@ -62,47 +61,50 @@ const darkTheme = {
 // Main Component
 // =================================================================
 const WeeklySteps = ({
-    totalSteps,
-    averageSteps,
-    weeklyDuration,
-    weeklyDistance,
-    weeklyCalories,
-    stepsChange,
-    weekData,
-    previousWeekData, 
+    totalSteps = 0,
+    averageSteps = 0,
+    weeklyDuration = '0',
+    weeklyDistance = '0',
+    weeklyCalories = '0',
+    stepsChange = '0',
+    weekData = [],
+    previousWeekData = [], 
     weekStartDate,
-    formattedDateRange,
+    formattedDateRange = '',
     onPreviousWeek,
     onNextWeek,
-    isCurrentWeek,
-    targetSteps,
-    isLoading,
-    maxSteps,
-    language,
-    isDarkMode,
-    translation: t,
-    dayNamesShort
+    isCurrentWeek = true,
+    targetSteps = 6000,
+    isLoading = false,
+    maxSteps = 10000,
+    language = 'ar',
+    isDarkMode = false,
+    translation: t = {},
+    dayNamesShort = []
 }) => {
     const [selectedBarIndex, setSelectedBarIndex] = useState(null);
     const theme = useMemo(() => isDarkMode ? darkTheme : lightTheme, [isDarkMode]);
     const styles = useMemo(() => getStyles(theme, I18nManager.isRTL), [theme, I18nManager.isRTL]);
     
+    // Fallback for names if empty
+    const safeDayNames = (dayNamesShort && dayNamesShort.length === 7) ? dayNamesShort : ['-', '-', '-', '-', '-', '-', '-'];
+
     const { calculatedTrendText, calculatedActiveDay } = useMemo(() => {
         const currentWeekTotalSteps = (weekData || []).reduce((sum, steps) => sum + (steps || 0), 0);
         const previousWeekTotalSteps = (previousWeekData || []).reduce((sum, steps) => sum + (steps || 0), 0);
         
-        let trend = t.trendUsualActivity;
+        let trend = t.trendUsualActivity || '...';
         if (previousWeekTotalSteps > 0) {
             const changeRatio = currentWeekTotalSteps / previousWeekTotalSteps;
-            if (changeRatio > 1.2) trend = t.trendMoreActive;
-            else if (changeRatio < 0.8) trend = t.trendLessActive;
+            if (changeRatio > 1.2) trend = t.trendMoreActive || 'نشاط أعلى';
+            else if (changeRatio < 0.8) trend = t.trendLessActive || 'نشاط أقل';
         } else if (currentWeekTotalSteps > 1000) {
-             trend = t.trendStartActive;
+             trend = t.trendStartActive || 'بداية نشطة';
         } else if (currentWeekTotalSteps === 0 && previousWeekTotalSteps === 0) {
-             trend = t.trendNoData;
+             trend = t.trendNoData || 'لا توجد بيانات';
         }
 
-        let activeDay = t.activeTimeNoSignificant;
+        let activeDay = t.activeTimeNoSignificant || '-';
         if (weekData && weekData.length > 0 && weekStartDate && !isNaN(new Date(weekStartDate).getTime())) {
             const maxStepsInWeek = Math.max(...weekData.map(v => v || 0));
             if (maxStepsInWeek > 0) {
@@ -134,11 +136,10 @@ const WeeklySteps = ({
     const todayIndex = useMemo(() => {
         if (!isCurrentWeek) return -1;
         const today = new Date();
-        const startOfWeekDay = language === 'ar' ? 6 : 0;
         const todayDay = today.getDay();
         let indexInWeek;
         if (language === 'ar') {
-            indexInWeek = (todayDay + 1) % 7;
+            indexInWeek = (todayDay + 1) % 7; 
         } else {
             indexInWeek = todayDay;
         }
@@ -148,11 +149,11 @@ const WeeklySteps = ({
 
     if (isLoading) {
         return (
-            <SafeAreaView style={styles.safeArea}>
+            <View style={styles.container}>
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={theme.mainText} />
                 </View>
-            </SafeAreaView>
+            </View>
         );
     }
     
@@ -173,85 +174,120 @@ const WeeklySteps = ({
     const handleDismissTooltip = () => setSelectedBarIndex(null);
 
     return (
-        <SafeAreaView style={styles.safeArea}>
-            <ScrollView contentContainerStyle={styles.contentContainer}>
+        <View style={styles.container}>
+            <ScrollView contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
                 <View style={styles.chartCard}>
-                    {/* 
-                        تعديل اتجاه الأسهم:
-                        السهم الأيسر = الأسبوع السابق
-                        السهم الأيمن = الأسبوع التالي
-                    */}
+                    {/* Header Navigator */}
                     <View style={styles.dateNavigator}>
-                         {/* Left Arrow: Previous Week */}
                          <TouchableOpacity onPress={onPreviousWeek}>
-                            <Ionicons name={I18nManager.isRTL ? "chevron-forward-outline" : "chevron-back-outline"} size={26} color={theme.chevron} />
+                            <Ionicons name={I18nManager.isRTL ? "chevron-back-outline" : "chevron-forward-outline"} size={26} color={theme.chevron} />
                         </TouchableOpacity>
 
                         <Text style={styles.dateText}>{formattedDateRange}</Text>
 
-                        {/* Right Arrow: Next Week */}
                         <TouchableOpacity onPress={onNextWeek} disabled={isCurrentWeek}>
-                            <Ionicons name={I18nManager.isRTL ? "chevron-back-outline" : "chevron-forward-outline"} size={26} color={isCurrentWeek ? theme.disabledChevron : theme.chevron} />
+                            <Ionicons name={I18nManager.isRTL ? "chevron-forward-outline" : "chevron-back-outline"} size={26} color={isCurrentWeek ? theme.disabledChevron : theme.chevron} />
                         </TouchableOpacity>
                     </View>
 
+                    {/* Summary Boxes */}
                     <View style={styles.summaryContainer}>
-                        <View style={styles.summaryBox}><Text style={styles.summaryValue}>{formatNumber(totalSteps, language)}</Text><Text style={styles.summaryLabel}>{t.total}</Text></View>
-                        <View style={styles.summaryBox}><Text style={styles.summaryValue}>{formatNumber(averageSteps, language)}</Text><Text style={styles.summaryLabel}>{t.average}</Text></View>
+                        <View style={styles.summaryBox}>
+                            <Text style={styles.summaryValue}>{formatNumber(totalSteps, language)}</Text>
+                            <Text style={styles.summaryLabel}>{t.total || 'Total'}</Text>
+                        </View>
+                        <View style={styles.summaryBox}>
+                            <Text style={styles.summaryValue}>{formatNumber(averageSteps, language)}</Text>
+                            <Text style={styles.summaryLabel}>{t.average || 'Avg'}</Text>
+                        </View>
                     </View>
+                    
+                    {/* THE GRAPH */}
                     <Pressable style={styles.graphContainer} onPress={handleDismissTooltip}>
-                        <View style={styles.yAxis}>{yAxisLabels.map((label, index) => <Text key={`y-${index}`} style={styles.yAxisLabel}>{label}</Text>)}</View>
+                        <View style={styles.yAxis}>
+                            {yAxisLabels.map((label, index) => (
+                                <Text key={`y-${index}`} style={styles.yAxisLabel}>{label}</Text>
+                            ))}
+                        </View>
                         <View style={styles.barsAreaWrapper}>
                             <View style={styles.barsArea} collapsable={false}>
                                 <View style={styles.bars}>
-                                    {(dayNamesShort).map((_, index) => {
+                                    {safeDayNames.map((_, index) => {
                                         const val = effectiveWeekData[index] ?? 0;
                                         const h = getBarHeight(val);
                                         const isSel = selectedBarIndex === index;
                                         const isTodayBar = isCurrentWeek && index === todayIndex;
-                                        const style = [styles.bar, { height: h, minHeight: val > 0 ? 2 : 0 }, isSel ? styles.selectedBar : isTodayBar ? styles.activeBar : (val >= targetSteps) ? styles.achievedBar : styles.inactiveBar];
-                                        return (<Pressable key={index} style={styles.barWrapper} onPress={() => handleBarPress(index)}>
-                                            {isSel && val > 0 && (<Tooltip value={val} language={language} styles={styles} barHeight={h} />)}
-                                            <View style={style} />
-                                        </Pressable>);
+                                        const barStyle = [styles.bar, { height: h, minHeight: val > 0 ? 2 : 0 }, isSel ? styles.selectedBar : isTodayBar ? styles.activeBar : (val >= targetSteps) ? styles.achievedBar : styles.inactiveBar];
+                                        return (
+                                            <Pressable key={index} style={styles.barWrapper} onPress={() => handleBarPress(index)}>
+                                                {isSel && val > 0 && (<Tooltip value={val} language={language} styles={styles} barHeight={h} />)}
+                                                <View style={barStyle} />
+                                            </Pressable>
+                                        );
                                     })}
                                 </View>
                                 <View style={styles.xAxis}>
-                                    {(dayNamesShort).map((label, index) => (<Text key={index} style={[styles.xAxisLabel, (isCurrentWeek && index === todayIndex) && styles.activeXAxisLabel]}>{label}</Text>))}
+                                    {safeDayNames.map((label, index) => (
+                                        <Text key={index} style={[styles.xAxisLabel, (isCurrentWeek && index === todayIndex) && styles.activeXAxisLabel]}>{label}</Text>
+                                    ))}
                                 </View>
                             </View>
                         </View>
                     </Pressable>
                 </View>
                 
-                <Text style={styles.sectionTitle}>{t.weeklySummary}</Text>
+                {/* Bottom Summary */}
+                <Text style={styles.sectionTitle}>{t.weeklySummary || 'Summary'}</Text>
                 <View style={styles.summaryMainCard}>
-                    <View style={styles.summaryStatRow}><Text style={styles.summaryStatValue}>{stepsChange}</Text><Text style={styles.summaryStatLabel}>{t.stepsLabelUnit}</Text></View>
+                    <View style={styles.summaryStatRow}>
+                        <Text style={styles.summaryStatValue}>{stepsChange}</Text>
+                        <Text style={styles.summaryStatLabel}>{t.stepsLabelUnit || 'Steps'}</Text>
+                    </View>
                     <View style={styles.divider} />
-                    <View style={styles.summaryStatRow}><Text style={[styles.summaryStatValue, {fontSize: 16}]}>{calculatedTrendText}</Text><Text style={styles.summaryStatLabel}>{t.trendsLabel}</Text></View>
+                    <View style={styles.summaryStatRow}>
+                        <Text style={[styles.summaryStatValue, {fontSize: 16}]}>{calculatedTrendText}</Text>
+                        <Text style={styles.summaryStatLabel}>{t.trendsLabel || 'Trend'}</Text>
+                    </View>
                     <View style={styles.divider} />
                     <View style={styles.summaryStatRow}>
                         <Text style={[styles.summaryStatValue, {fontSize: 16}]}>{calculatedActiveDay}</Text>
-                        <Text style={styles.summaryStatLabel}>{t.mostActiveTimeLabel}</Text>
+                        <Text style={styles.summaryStatLabel}>{t.mostActiveTimeLabel || 'Active Time'}</Text>
                     </View>
                 </View>
 
+                {/* Metrics */}
                 <View style={styles.metricsCard}>
-                    <MetricBlock iconName="time-outline" value={weeklyDuration} unit={t.durationUnit} theme={theme} styles={styles} IconComponent={Ionicons} />
-                    <MetricBlock iconName="location-outline" value={weeklyDistance} unit={t.distanceUnit} theme={theme} styles={styles} IconComponent={Ionicons} />
-                    <MetricBlock iconName="fire" value={weeklyCalories} unit={t.caloriesUnit} theme={theme} styles={styles} IconComponent={MaterialCommunityIcons} />
+                    <MetricBlock iconName="time-outline" value={weeklyDuration} unit={t.durationUnit || 'min'} theme={theme} styles={styles} IconComponent={Ionicons} />
+                    <MetricBlock iconName="location-outline" value={weeklyDistance} unit={t.distanceUnit || 'km'} theme={theme} styles={styles} IconComponent={Ionicons} />
+                    <MetricBlock iconName="fire" value={weeklyCalories} unit={t.caloriesUnit || 'cal'} theme={theme} styles={styles} IconComponent={MaterialCommunityIcons} />
                 </View>
                 <View style={{ height: 30 }} />
             </ScrollView>
-        </SafeAreaView>
+        </View>
     );
 };
 
-const Tooltip = ({ value, language, styles, barHeight }) => (<View style={[styles.tooltipPositioner, { bottom: barHeight, marginBottom: 5 }]}><View style={styles.tooltipContainer}><Text style={styles.tooltipText}>{formatNumber(value, language)}</Text></View><View style={styles.tooltipPointer} /></View>);
-const MetricBlock = ({ iconName, value, unit, theme, styles, IconComponent }) => ( <View style={styles.metricBlock}> <View style={styles.metricIconCircle}> <IconComponent name={iconName} size={28} color={theme.icon} /> </View> <Text style={styles.metricValue}>{value}</Text> <Text style={styles.metricUnit}>{unit}</Text> </View> );
+const Tooltip = ({ value, language, styles, barHeight }) => (
+    <View style={[styles.tooltipPositioner, { bottom: barHeight, marginBottom: 5 }]}>
+        <View style={styles.tooltipContainer}>
+            <Text style={styles.tooltipText}>{formatNumber(value, language)}</Text>
+        </View>
+        <View style={styles.tooltipPointer} />
+    </View>
+);
+
+const MetricBlock = ({ iconName, value, unit, theme, styles, IconComponent }) => (
+    <View style={styles.metricBlock}>
+        <View style={styles.metricIconCircle}>
+            <IconComponent name={iconName} size={28} color={theme.icon} />
+        </View>
+        <Text style={styles.metricValue}>{value}</Text>
+        <Text style={styles.metricUnit}>{unit}</Text>
+    </View>
+);
 
 const getStyles = (theme, isRTL) => StyleSheet.create({
-    safeArea: { flex: 1, backgroundColor: theme.safeArea },
+    container: { flex: 1, backgroundColor: theme.safeArea },
     contentContainer: { padding: 15, paddingBottom: 50 },
     loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     chartCard: { backgroundColor: theme.cardBackground, borderRadius: 20, marginBottom: 20, shadowColor: theme.shadowColor, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 5, elevation: 2, overflow: 'hidden' },
@@ -261,7 +297,17 @@ const getStyles = (theme, isRTL) => StyleSheet.create({
     summaryBox: { alignItems: 'center', flex:1 },
     summaryValue: { fontSize: 32, fontWeight: 'bold', color: theme.mainText, fontVariant: ['tabular-nums'] },
     summaryLabel: { fontSize: 14, color: theme.secondaryText, marginTop: 4, textAlign:'center' },
-    graphContainer: { flexDirection: 'row', paddingHorizontal: 15, paddingTop: 30, paddingBottom: 10, minHeight: 220 },
+    
+    // --- FIX HERE: Fixed height prevents infinite stretching ---
+    graphContainer: { 
+        flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row', // Force RTL direction
+        paddingHorizontal: 15, 
+        paddingTop: 30, 
+        paddingBottom: 10, 
+        height: 300, // <--- IMPORTANT: Fixed Height
+        alignItems: 'stretch'
+    },
+    
     yAxis: { width: 45, justifyContent: 'space-between', alignItems: 'flex-end', paddingRight: 8, height: '100%', paddingBottom: 25 },
     yAxisLabel: { fontSize: 11, color: theme.secondaryText, fontVariant: ['tabular-nums'] },
     barsAreaWrapper: { flex: 1, marginLeft: 5 },
@@ -276,7 +322,7 @@ const getStyles = (theme, isRTL) => StyleSheet.create({
     xAxis: { position: 'absolute', bottom: -25, left: 0, right: 0, height: 20, flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center' },
     xAxisLabel: { fontSize: 12, color: theme.secondaryText, textAlign: 'center', flex: 1 },
     activeXAxisLabel: { color: theme.activeDayLabelColor, fontWeight: 'bold' },
-    tooltipPositioner: { position: 'absolute', alignItems: 'center', zIndex: 10 },
+    tooltipPositioner: { position: 'absolute', alignItems: 'center', zIndex: 10, width: 100 },
     tooltipContainer: { backgroundColor: theme.tooltipBg, borderRadius: 8, paddingVertical: 5, paddingHorizontal: 10, minWidth: 65, alignItems: 'center' },
     tooltipText: { color: theme.tooltipText, fontSize: 12, fontWeight: 'bold' },
     tooltipPointer: { width: 0, height: 0, borderLeftWidth: 6, borderRightWidth: 6, borderTopWidth: 6, borderStyle: 'solid', backgroundColor: 'transparent', borderLeftColor: 'transparent', borderRightColor: 'transparent', borderTopColor: theme.tooltipBg, marginTop: -1 },
