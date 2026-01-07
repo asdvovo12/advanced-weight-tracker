@@ -284,7 +284,6 @@ const SignUpScreen = ({ language = 'ar', isDarkMode = false }) => {
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}>
       <View style={styles.tabContainerWrapper}>
-        {/* التبديل هنا */}
         <View style={[styles.tabContainer, language === 'ar' && { flexDirection: 'row-reverse' }]}>
           <TouchableOpacity style={[ styles.tab, activeTab === 'Login' && styles.activeTab ]} onPress={() => handleTabPress('Login')} disabled={anyLoading}>
             <Text style={[ styles.tabText, activeTab === 'Login' && styles.activeTabText ]}>{translation.loginTab}</Text>
@@ -354,9 +353,10 @@ const SignUpScreen = ({ language = 'ar', isDarkMode = false }) => {
   );
 };
 
+// التعديلات تمت هنا بشكل رئيسي في scrollContentContainer وفي الهوامش لرفع المحتوى
 const getStyles = (theme) => StyleSheet.create({
     container: { flex: 1, backgroundColor: theme.background },
-    scrollContentContainer: { flexGrow: 1, paddingBottom: 20 },
+    scrollContentContainer: { flexGrow: 1, paddingBottom: 150 }, // تم زيادة هذا الرقم لرفع المحتوى عند السكرول
     tabContainerWrapper: { backgroundColor: theme.contentBackground, paddingTop: Platform.OS === 'ios' ? 50 : 30, borderBottomWidth: 1, borderBottomColor: theme.separator, zIndex: 10 },
     tabContainer: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10 },
     tab: { flex: 1, paddingVertical: 15, alignItems: 'center', justifyContent: 'center', position: 'relative', borderBottomWidth: 3, borderBottomColor: 'transparent' },
@@ -364,21 +364,21 @@ const getStyles = (theme) => StyleSheet.create({
     tabText: { fontSize: 17, fontWeight: '600', color: theme.placeholderText },
     activeTabText: { color: theme.text },
     greenLine: { backgroundColor: theme.primary, height: 3, position: 'absolute', bottom: -5, left: 0, right: 0 },
-    content: { paddingHorizontal: 25, paddingTop: 20 },
-    socialButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: theme.contentBackground, borderWidth: 1, borderColor: theme.socialButtonBorder, borderRadius: 8, paddingVertical: 10, paddingHorizontal: 15, marginBottom: 12, minHeight: 44 },
+    content: { paddingHorizontal: 25, paddingTop: 30 }, // تم تقليل المسافة العلوية قليلاً
+    socialButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: theme.contentBackground, borderWidth: 1, borderColor: theme.socialButtonBorder, borderRadius: 8, paddingVertical: -5, paddingHorizontal: 15, marginBottom: 10, minHeight: 44 }, // تقليل الهامش السفلي
     buttonIcon: { marginHorizontal: 12, width: 24, textAlign: 'center' },
     googleLogo: { width: 22, height: 22, marginHorizontal: 12 },
     socialButtonText: { fontSize: 16, fontWeight: '500', color: theme.socialButtonText },
-    orText: { textAlign: 'center', marginVertical: 15, color: theme.placeholderText, fontSize: 14 },
-    inputContainer: { flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: theme.inputBorder, marginBottom: 15, paddingBottom: 5 },
+    orText: { textAlign: 'center', marginVertical: 10, color: theme.placeholderText, fontSize: 14 }, // تقليل الهامش
+    inputContainer: { flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: theme.inputBorder, marginBottom: 10, paddingBottom: 5 }, // تقليل الهامش
     inputIcon: { marginHorizontal: 12, width: 20, textAlign: 'center' },
     input: { flex: 1, height: 40, fontSize: 16, color: theme.text, textAlign: I18nManager.isRTL ? 'left' : 'right' },
     eyeIcon: { paddingHorizontal: 10 },
-    passwordRequirements: { marginVertical: 10, paddingHorizontal: 5, alignSelf: I18nManager.isRTL ? 'flex-end' : 'flex-start' },
+    passwordRequirements: { marginVertical: 8, paddingHorizontal: 5, alignSelf: I18nManager.isRTL ? 'flex-end' : 'flex-start' },
     requirementText: { fontSize: 13, color: theme.invalid, marginBottom: 4, flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row', alignItems: 'center' },
     reqIcon: { marginHorizontal: 6 },
     validRequirement: { color: theme.valid },
-    termsContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 25 },
+    termsContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 }, // تقليل الهامش
     checkbox: { width: 20, height: 20, borderWidth: 1.5, borderColor: theme.checkboxBorder, borderRadius: 3, marginHorizontal: 10, alignItems: 'center', justifyContent: 'center' },
     checkboxChecked: { backgroundColor: theme.primary, borderColor: theme.primary },
     termsText: { flex: 1, fontSize: 13, color: theme.subtleText, lineHeight: 18, textAlign: I18nManager.isRTL ? 'left' : 'left' },
